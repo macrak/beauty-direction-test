@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <title>나답게 예뻐지세요</title>
+    <script>
+      // GitHub Pages는 정적 호스팅이라 새로고침/직접 진입 시 404가 나는데,
+      // 이 스크립트가 실제 경로를 쿼리스트링에 담아 index.html로 리다이렉트하고
+      // index.html의 스크립트가 이를 다시 원래 경로로 복원해 라우터가 처리하게 한다.
+      // 참고: https://github.com/rafgraph/spa-github-pages
+      var segmentCount = 1;
+      var l = window.location;
+      l.replace(
+        l.protocol + '//' + l.hostname + (l.port ? ':' + l.port : '') +
+        l.pathname.split('/').slice(0, 1 + segmentCount).join('/') + '/?/' +
+        l.pathname.slice(1).split('/').slice(segmentCount).join('/').replace(/&/g, '~and~') +
+        (l.search ? '&' + l.search.slice(1).replace(/&/g, '~and~') : '') +
+        l.hash
+      );
+    </script>
+  </head>
+  <body></body>
+</html>

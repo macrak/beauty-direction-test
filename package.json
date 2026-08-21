@@ -2,6 +2,7 @@
   "name": "beauty-direction-app",
   "version": "1.0.0",
   "private": true,
+  "homepage": "https://macrak.github.io/beauty-direction-test",
   "dependencies": {
     "framer-motion": "^10.16.4",
     "lucide-react": "^0.284.0",
