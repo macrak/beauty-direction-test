@@ -5,6 +5,21 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content="나답게 예뻐지세요 - 연예인 뷰티 스타일 검색 앱" />
     <title>나답게 예뻐지세요</title>
+    <script>
+      // 404.html이 심어둔 쿼리스트링을 원래 경로로 복원 (GitHub Pages SPA 라우팅 대응)
+      (function (l) {
+        if (l.search[1] === '/') {
+          var decoded = l.search
+            .slice(1)
+            .split('&')
+            .map(function (s) {
+              return s.replace(/~and~/g, '&');
+            })
+            .join('?');
+          window.history.replaceState(null, null, l.pathname.slice(0, -1) + decoded + l.hash);
+        }
+      })(window.location);
+    </script>
   </head>
   <body>
     <noscript>이 앱을 실행하려면 JavaScript를 활성화해야 합니다.</noscript>
