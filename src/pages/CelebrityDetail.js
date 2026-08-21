@@ -32,7 +32,10 @@ export default function CelebrityDetail() {
         <Card>
           <h1 className="text-3xl font-bold mb-2">{celebrity.name}</h1>
           <p className="text-gray-500 mb-4">{genderLabel[celebrity.gender]}</p>
-          <p className="text-gray-700 text-lg">{celebrity.description}</p>
+          <p className="text-gray-700 text-lg mb-6">{celebrity.description}</p>
+          <Button className="w-full" onClick={() => navigate(`/direction/${celebrity.id}`)}>
+            나에게 맞는 뷰티 방향 찾기
+          </Button>
         </Card>
       </div>
     </div>

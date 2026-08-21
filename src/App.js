@@ -4,6 +4,7 @@ import React from 'react';
 import { Routes, Route } from 'react-router-dom';
 import Home from './pages/Home';
 import CelebrityDetail from './pages/CelebrityDetail';
+import BeautyDirection from './pages/BeautyDirection';
 import './index.css';
 
 export default function App() {
@@ -11,6 +12,7 @@ export default function App() {
     <Routes>
       <Route path="/" element={<Home />} />
       <Route path="/celebrity/:id" element={<CelebrityDetail />} />
+      <Route path="/direction/:id" element={<BeautyDirection />} />
     </Routes>
   );
 }
