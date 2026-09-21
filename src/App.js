@@ -5,6 +5,7 @@ import { Routes, Route } from 'react-router-dom';
 import Home from './pages/Home';
 import CelebrityDetail from './pages/CelebrityDetail';
 import BeautyDirection from './pages/BeautyDirection';
+import RealPrice from './pages/RealPrice';
 import './index.css';
 
 export default function App() {
@@ -13,6 +14,7 @@ export default function App() {
       <Route path="/" element={<Home />} />
       <Route path="/celebrity/:id" element={<CelebrityDetail />} />
       <Route path="/direction/:id" element={<BeautyDirection />} />
+      <Route path="/real-price" element={<RealPrice />} />
     </Routes>
   );
 }

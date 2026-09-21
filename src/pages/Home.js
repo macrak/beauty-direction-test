@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Card } from '../components/ui/card';
 import { Input } from '../components/ui/input';
 import { Button } from '../components/ui/button';
@@ -52,6 +52,9 @@ export default function Home() {
           />
           <Button onClick={() => setQuery('')}>초기화</Button>
         </div>
+        <Link to="/real-price" className="inline-block mt-3 text-sm text-emerald-700 underline">
+          찐가격 — 한국인이 실제로 낸 시술 가격 보기 →
+        </Link>
       </header>
 
       <main className="max-w-4xl mx-auto space-y-8">

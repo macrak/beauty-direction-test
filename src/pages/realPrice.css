@@ -1,0 +1,82 @@
+/* 찐가격 섹션 스타일 — 기존 사이트 디자인 시스템에 맞게 색상 변수만 교체해서 쓰세요 */
+:root {
+  --jp-paper: #F3F2ED;
+  --jp-ink: #1C2321;
+  --jp-ink-soft: #55605B;
+  --jp-ink-faint: #8A9189;
+  --jp-jade: #0E6B5C;
+  --jp-jade-tint: #E3F0EC;
+  --jp-stamp: #A6362B;
+  --jp-stamp-tint: #F6E4E1;
+  --jp-line: #D8D5CB;
+  --jp-card: #FCFBF8;
+}
+
+.jp-root { max-width: 760px; margin: 0 auto; padding: 0 20px 80px; font-family: inherit; color: var(--jp-ink); }
+.jp-section { padding: 32px 0; border-top: 1px solid var(--jp-line); }
+.jp-section h2 { font-size: 19px; margin: 0 0 8px; }
+.jp-sub { color: var(--jp-ink-soft); font-size: 14.5px; line-height: 1.7; margin: 0 0 16px; max-width: 58ch; }
+
+.jp-hero { padding: 44px 0 20px; }
+.jp-stamp {
+  display: inline-flex; border: 1.5px solid var(--jp-stamp); color: var(--jp-stamp);
+  font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 3px;
+  transform: rotate(-2deg); margin-bottom: 18px;
+}
+.jp-hero h1 { font-size: 30px; line-height: 1.35; font-weight: 700; margin: 0 0 14px; }
+.jp-hero h1 em { font-style: normal; color: var(--jp-jade); }
+
+.jp-searchbox {
+  display: flex; align-items: center; gap: 10px; background: var(--jp-card);
+  border: 1.5px solid var(--jp-line); border-radius: 8px; padding: 4px 16px;
+}
+.jp-searchbox input { flex: 1; border: none; background: transparent; font-size: 15.5px; padding: 12px 0; outline: none; }
+
+.jp-chips { display: flex; gap: 8px; flex-wrap: wrap; margin: 14px 0; }
+.jp-chips button {
+  border: 1px solid var(--jp-line); background: var(--jp-card); color: var(--jp-ink-soft);
+  border-radius: 20px; padding: 7px 14px; font-size: 13px; cursor: pointer;
+}
+.jp-chips button.active { background: var(--jp-jade-tint); border-color: var(--jp-jade); color: var(--jp-jade); }
+
+.jp-results { margin-top: 10px; border-top: 1px solid var(--jp-line); }
+.jp-result-line { display: flex; justify-content: space-between; align-items: center; padding: 15px 4px; border-bottom: 1px dashed var(--jp-line); cursor: pointer; }
+.jp-rl-name { font-size: 15px; font-weight: 500; }
+.jp-rl-meta { font-size: 12px; color: var(--jp-ink-faint); margin-top: 3px; }
+.jp-rl-price { font-weight: 600; font-size: 15px; text-align: right; }
+.jp-rl-price .unit { font-size: 11px; color: var(--jp-ink-faint); font-weight: 400; display: block; }
+.jp-empty { padding: 20px 4px; color: var(--jp-ink-faint); font-size: 14px; }
+
+.jp-detail { background: var(--jp-jade-tint); border-radius: 8px; padding: 16px 18px; margin: 6px 0 14px; }
+.jp-bar { height: 6px; background: var(--jp-line); border-radius: 3px; position: relative; margin-bottom: 8px; }
+.jp-bar-fill { position: absolute; top: 0; bottom: 0; background: var(--jp-jade); border-radius: 3px; }
+.jp-scale { display: flex; justify-content: space-between; font-size: 11px; color: var(--jp-ink-faint); }
+
+.jp-hosp-card { background: var(--jp-card); border: 1px solid var(--jp-line); border-radius: 10px; padding: 20px 22px; margin-top: 12px; }
+.jp-hc-name { font-weight: 600; font-size: 15px; }
+.jp-hc-tag { font-size: 11.5px; color: var(--jp-jade); margin-bottom: 12px; }
+.jp-hc-row { display: flex; justify-content: space-between; padding: 8px 0; font-size: 14px; border-bottom: 1px dashed var(--jp-line); }
+.jp-hc-row .n { font-size: 11px; color: var(--jp-ink-faint); display: block; }
+
+.jp-quote-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; }
+.jp-quote-item {
+  display: flex; align-items: center; gap: 8px; border: 1.5px solid var(--jp-line);
+  border-radius: 8px; padding: 12px 14px; cursor: pointer; font-size: 13.5px; background: var(--jp-card);
+}
+.jp-quote-item.checked { border-color: var(--jp-jade); background: var(--jp-jade-tint); }
+.jp-qi-name { flex: 1; }
+.jp-qi-price { font-size: 12.5px; color: var(--jp-ink-soft); }
+
+.jp-quote-total { background: var(--jp-ink); color: var(--jp-paper); border-radius: 12px; padding: 22px 24px; margin-top: 18px; text-align: center; }
+.jp-qt-label { font-size: 13px; color: #C7CCC5; margin-bottom: 8px; }
+.jp-qt-range { font-size: 24px; font-weight: 700; color: var(--jp-jade); }
+.jp-qt-median { font-size: 13px; color: #C7CCC5; margin: 4px 0 16px; }
+.jp-cta-btn { background: var(--jp-jade); color: #fff; border: none; border-radius: 7px; padding: 13px 26px; font-size: 14.5px; font-weight: 500; cursor: pointer; }
+.jp-disclaimer { font-size: 11.5px; color: #8B958D; margin-top: 12px; line-height: 1.6; }
+
+.jp-submit-form { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; }
+.jp-submit-form input { border: 1.5px solid var(--jp-line); background: var(--jp-card); border-radius: 7px; padding: 11px 13px; font-size: 14px; }
+.jp-submit-form button { grid-column: 1 / -1; background: var(--jp-jade); color: #fff; border: none; border-radius: 7px; padding: 12px; font-size: 14.5px; cursor: pointer; }
+.jp-error { color: var(--jp-stamp); font-size: 13px; margin-top: 8px; }
+
+.mono { font-variant-numeric: tabular-nums; }
