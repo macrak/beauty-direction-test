@@ -3,6 +3,7 @@
 // 사용: npm run db:seed (비어 있을 때만 데모 생성) / npm run db:reset-demo (데모 재생성)
 import { PrismaClient, type LiquorType, type Prisma } from "@prisma/client";
 import bcrypt from "bcryptjs";
+import { ARTICLES, BREWERY_THEMES } from "./seed-content";
 
 const prisma = new PrismaClient();
 const force = process.argv.includes("--force");
@@ -1137,10 +1138,57 @@ async function seedDemo() {
   console.log(`데모 양조장 ${breweries.length}곳, 상품 ${products.length}개 생성`);
 }
 
+// 데모 양조장 비주얼 테마 (비어 있을 때만)
+async function ensureThemes() {
+  for (const [slug, theme] of Object.entries(BREWERY_THEMES)) {
+    await prisma.brewery.updateMany({ where: { slug, isDemo: true, visualTheme: null }, data: { visualTheme: theme } });
+  }
+}
+
+async function ensureArticles() {
+  if (force) await prisma.article.deleteMany({ where: { isDemo: true } });
+  else if ((await prisma.article.count()) > 0) return;
+  const day = 24 * 60 * 60 * 1000;
+  for (const a of ARTICLES) {
+    const brewery = a.brewery ? await prisma.brewery.findUnique({ where: { slug: a.brewery } }) : null;
+    const products = await prisma.product.findMany({ where: { slug: { in: a.products } }, select: { id: true, slug: true } });
+    await prisma.article.create({
+      data: {
+        slug: a.slug,
+        title: a.title,
+        subtitle: a.subtitle,
+        category: a.category,
+        excerpt: a.excerpt,
+        body: a.body,
+        coverTheme: a.coverTheme,
+        author: "SOOL RESERVE 편집부",
+        readMinutes: Math.max(1, Math.round(a.body.replace(/\s+/g, "").length / 500)),
+        breweryId: brewery?.id,
+        status: "PUBLISHED",
+        publishedAt: new Date(Date.now() - a.daysAgo * day),
+        adCheckNoGlamour: true,
+        adCheckNoMinors: true,
+        adCheckNoHealth: true,
+        adCheckWarning: true,
+        adCheckFacts: true,
+        isDemo: true,
+        products: {
+          create: a.products
+            .map((slug, position) => ({ productId: products.find((p) => p.slug === slug)?.id, position }))
+            .filter((x): x is { productId: string; position: number } => !!x.productId),
+        },
+      },
+    });
+  }
+  console.log(`데모 매거진 ${ARTICLES.length}편 생성`);
+}
+
 async function main() {
   await ensureAdmin();
   await ensureNotices();
   await seedDemo();
+  await ensureThemes();
+  await ensureArticles();
 }
 
 main()

@@ -3,6 +3,7 @@ import ActionForm from "./ActionForm";
 import { Check, F, Sel, Section, TA } from "./Field";
 import type { ActionState } from "@/lib/form";
 import { ONBOARDING_LABEL } from "@/lib/labels";
+import { VISUAL_THEMES } from "@/components/BreweryVisual";
 
 export default function BreweryForm({
   brewery,
@@ -15,6 +16,7 @@ export default function BreweryForm({
 }) {
   const b = brewery;
   const c = b?.compliance;
+  const gallery = (Array.isArray(b?.gallery) ? (b!.gallery as unknown as { url: string; caption?: string }[]) : []).filter((g) => g?.url);
   return (
     <ActionForm action={action} submitLabel={b ? "변경 사항 저장" : "양조장 등록"} stickyFooter className="space-y-4">
       {b && <input type="hidden" name="id" value={b.id} />}
@@ -65,7 +67,40 @@ export default function BreweryForm({
           <input type="file" name="image" accept="image/jpeg,image/png,image/webp" className="adm-input" />
           {b?.imageUrl && <span className="mt-1 block text-[11px] text-charcoal/45">현재: {b.imageUrl}</span>}
         </label>
+        <F label="대표 사진 출처/저작권" name="imageCredit" defaultValue={b?.imageCredit} />
+        <Sel label="사진이 없을 때 일러스트 테마" name="visualTheme" options={Object.entries(VISUAL_THEMES)} defaultValue={b?.visualTheme} empty="자동" />
         <F label="영상 URL" name="videoUrl" defaultValue={b?.videoUrl} span={2} />
+      </Section>
+
+      <Section title="사진 (장인 · 제조 과정)" desc="실제 촬영본만 사용하세요. 제조 과정 사진이 없으면 6단계 공정 일러스트가 표시됩니다.">
+        <label className="block md:col-span-2">
+          <span className="adm-label">장인 사진 (세로형 권장)</span>
+          <input type="file" name="artisanImage" accept="image/jpeg,image/png,image/webp" className="adm-input" />
+          {b?.artisanImageUrl && (
+            <span className="mt-1 flex items-center gap-3 text-[11px] text-charcoal/45">
+              현재: {b.artisanImageUrl} <Check label="삭제" name="removeArtisanImage" />
+            </span>
+          )}
+        </label>
+        <div className="md:col-span-2" />
+        {[0, 1, 2, 3, 4, 5].map((i) => {
+          const g = gallery[i];
+          return (
+            <div key={i} className="rounded border border-line p-3 md:col-span-2">
+              <p className="adm-label">제조 과정 사진 #{i + 1}</p>
+              {g?.url && (
+                <div className="mb-2 flex items-center gap-3">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={g.url} alt="" className="h-14 w-20 rounded object-cover" />
+                  <input type="hidden" name={`gallery_${i}_url`} value={g.url} />
+                  <Check label="삭제" name={`gallery_${i}_remove`} />
+                </div>
+              )}
+              <input type="file" name={`gallery_${i}_file`} accept="image/jpeg,image/png,image/webp" className="adm-input" />
+              <input name={`gallery_${i}_caption`} defaultValue={g?.caption ?? ""} placeholder="캡션 (예: 고두밥을 식히는 새벽)" className="adm-input mt-2" />
+            </div>
+          );
+        })}
       </Section>
 
       <Section title="스토리 (고객 화면 노출)">

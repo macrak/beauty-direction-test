@@ -13,6 +13,7 @@ const NAV = [
   { href: "/admin/products", label: "상품 관리", group: "카탈로그" },
   { href: "/admin/selection", label: "상품 선별", group: "카탈로그" },
   { href: "/admin/featured", label: "추천 상품 설정", group: "카탈로그" },
+  { href: "/admin/magazine", label: "매거진 · 콘텐츠", group: "운영" },
   { href: "/admin/inquiries", label: "문의 관리", group: "운영" },
   { href: "/admin/legal", label: "법적 고지 · 경고문구", group: "운영" },
   { href: "/admin/commerce", label: "주문·배송·정산 (3단계)", group: "운영" },

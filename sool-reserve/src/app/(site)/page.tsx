@@ -1,6 +1,6 @@
 import Link from "next/link";
 import BottleArt from "@/components/BottleArt";
-import BreweryVisual from "@/components/BreweryVisual";
+import BreweryPhoto from "@/components/BreweryPhoto";
 import { ProductGrid } from "@/components/ProductCard";
 import ProductCard from "@/components/ProductCard";
 import Reveal from "@/components/Reveal";
@@ -10,10 +10,12 @@ import { getPublicProducts, getSlotProducts } from "@/lib/catalog";
 import { prisma } from "@/lib/db";
 import { GIFT_PURPOSES } from "@/lib/labels";
 import { getSettings } from "@/lib/settings";
+import { getPublishedArticles } from "@/lib/magazine";
+import ArticleCard from "@/components/ArticleCard";
 
 export default async function HomePage() {
   const settings = await getSettings();
-  const [main, limited, all, breweries] = await Promise.all([
+  const [main, limited, all, breweries, articles] = await Promise.all([
     getSlotProducts("MAIN", settings),
     getSlotProducts("LIMITED", settings),
     getPublicProducts({}, settings),
@@ -22,6 +24,7 @@ export default async function HomePage() {
       orderBy: { foundedYear: "asc" },
       take: 3,
     }),
+    getPublishedArticles({}, 3),
   ]);
   const collection = (main.length ? main : all).slice(0, 8);
   const showPrices = all.some((p) => p.price !== null);
@@ -51,7 +54,17 @@ export default async function HomePage() {
           </div>
           <div className="relative order-1 flex justify-center md:order-2">
             <div className="absolute top-1/2 h-[70%] w-[70%] -translate-y-1/2 rounded-full bg-[radial-gradient(circle,rgba(182,154,104,0.28)_0%,rgba(247,244,238,0)_65%)]" />
-            <BottleArt type="YAKJU" className="relative h-[46vh] w-auto drop-shadow-[0_30px_40px_rgba(32,32,32,0.18)] md:h-[68vh]" label="SOOL RESERVE" />
+            {settings.heroImageUrl ? (
+              // 관리자 업로드 히어로 사진 (실제 상품 연출 사진)
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={settings.heroImageUrl}
+                alt={settings.heroImageAlt || "SOOL RESERVE 대표 이미지"}
+                className="relative h-[46vh] w-full max-w-[560px] object-cover shadow-[0_30px_60px_rgba(32,32,32,0.18)] md:h-[72vh]"
+              />
+            ) : (
+              <BottleArt type="YAKJU" className="relative h-[46vh] w-auto drop-shadow-[0_30px_40px_rgba(32,32,32,0.18)] md:h-[68vh]" label="SOOL RESERVE" />
+            )}
           </div>
         </div>
         <div className="absolute bottom-8 left-1/2 hidden -translate-x-1/2 flex-col items-center gap-2 text-[10px] tracking-luxe text-charcoal/40 md:flex">
@@ -121,7 +134,7 @@ export default async function HomePage() {
             <Reveal key={b.id}>
               <article className={`grid items-center gap-8 md:grid-cols-12 md:gap-16 ${i % 2 ? "md:[&>*:first-child]:order-2" : ""}`}>
                 <div className="relative md:col-span-6">
-                  <BreweryVisual seed={i} />
+                  <BreweryPhoto brewery={b} seed={i} />
                   {b.isDemo && <DemoBadge className="absolute left-4 top-4" />}
                 </div>
                 <div className="md:col-span-6">
@@ -229,6 +242,29 @@ export default async function HomePage() {
           </Reveal>
         </div>
       </section>
+
+      {/* JOURNAL — 매거진 최신 글 */}
+      {articles.length > 0 && (
+        <section className="container-site pt-24 md:pt-32">
+          <Reveal>
+            <SectionHeading
+              eyebrow="Journal"
+              title="술을 곁에 두는 법."
+              desc="명주 이야기, 장인 인터뷰, 페어링과 보관 가이드."
+              action={
+                <Link href="/magazine" className="link-underline text-sm">
+                  매거진 전체 →
+                </Link>
+              }
+            />
+          </Reveal>
+          <Reveal className="grid gap-10 md:grid-cols-3">
+            {articles.map((a) => (
+              <ArticleCard key={a.id} a={a} />
+            ))}
+          </Reveal>
+        </section>
+      )}
 
       {/* SECTION 8. BRAND PHILOSOPHY */}
       <section className="container-site py-28 text-center md:py-40">

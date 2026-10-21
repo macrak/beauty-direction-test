@@ -39,6 +39,10 @@ model Brewery {
   awards                String?          // 수상 내역 (검증된 경우만)
   awardsVerified        Boolean          @default(false)
   imageUrl              String?
+  imageCredit           String?
+  visualTheme           String?          // 사진이 없을 때의 일러스트 테마 (hanok/field/still/island/orchard/mountain/lake/courtyard)
+  artisanImageUrl       String?          // 장인 사진
+  gallery               Json?            // 제조 과정 사진 [{url, caption}]
   videoUrl              String?
   website               String?
   onboardingStatus      OnboardingStatus @default(APPLIED)
@@ -52,6 +56,7 @@ model Brewery {
   compliance   SellerCompliance?
   products     Product[]
   users        User[]
+  articles     Article[]
   sellerOrders SellerOrder[]
   settlements  Settlement[]
 }
@@ -169,6 +174,7 @@ model Product {
   imageUrl          String?
   imageAlt          String?
   imageCredit       String?
+  gallery           String[]          // 추가 상품 사진 (병 디테일·패키지·선물 구성)
 
   // 가격 · 재고
   price             Int               // 판매가 (원, VAT 포함)
@@ -260,6 +266,7 @@ model Product {
 
   featured   FeaturedSlot[]
   orderItems OrderItem[]
+  articles   ArticleProduct[]
 
   @@index([status])
   @@index([breweryId])
@@ -283,6 +290,67 @@ model FeaturedSlot {
   endsAt    DateTime?
 
   @@unique([slot, productId])
+}
+
+// ─── 매거진 ─────────────────────────────────────────────
+
+enum ArticleCategory {
+  STORY       // 대한민국 명주 이야기
+  INTERVIEW   // 전통주 장인 인터뷰
+  GIFT_GUIDE  // 프리미엄 전통주 선물 가이드
+  PAIRING     // 전통주와 음식 페어링
+  GUIDE       // 보관 및 음용 가이드
+  TRAVEL      // 지역별 양조장 탐방
+}
+
+enum ArticleStatus {
+  DRAFT
+  PUBLISHED
+  HIDDEN
+}
+
+model Article {
+  id              String           @id @default(cuid())
+  slug            String           @unique
+  title           String
+  subtitle        String?
+  category        ArticleCategory
+  excerpt         String?
+  body            String           // 간이 마크다운: ## 소제목, > 인용, - 목록, 빈 줄 = 문단
+  coverImageUrl   String?
+  coverImageAlt   String?
+  coverImageCredit String?
+  coverTheme      String?          // 커버 사진이 없을 때의 일러스트 테마
+  author          String?
+  readMinutes     Int?
+  breweryId       String?
+  brewery         Brewery?         @relation(fields: [breweryId], references: [id], onDelete: SetNull)
+  status          ArticleStatus    @default(DRAFT)
+  publishedAt     DateTime?
+  // 주류 광고 기준 자체 점검 (국민건강증진법 등 — 게시 전 필수 체크)
+  adCheckNoGlamour   Boolean @default(false) // 음주 미화·과음 조장 표현 없음
+  adCheckNoMinors    Boolean @default(false) // 청소년 등장·청소년 대상 표현 없음
+  adCheckNoHealth    Boolean @default(false) // 건강 효능·치료 효과 주장 없음
+  adCheckWarning     Boolean @default(false) // 경고문구 노출 영역에 게시
+  adCheckFacts       Boolean @default(false) // 수상·한정·명인 등 사실 확인 완료
+  metaTitle       String?
+  metaDescription String?
+  isDemo          Boolean          @default(false)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  products        ArticleProduct[]
+
+  @@index([status, publishedAt])
+}
+
+model ArticleProduct {
+  articleId String
+  productId String
+  position  Int     @default(0)
+  article   Article @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@id([articleId, productId])
 }
 
 // ─── 운영 · 콘텐츠 ────────────────────────────────────────

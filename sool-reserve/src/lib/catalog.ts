@@ -7,7 +7,7 @@ import { getSettings, type SiteSettings } from "./settings";
 const PUBLIC_PRODUCT_FIELDS = [
   "id", "slug", "name", "nameEn", "region", "liquorType", "legalClass", "eligibility", "summary", "description",
   "abv", "volumeMl", "ingredients", "origin", "productionMethod", "agingMethod", "agingPeriod", "shelfLife",
-  "storageGuide", "imageUrl", "imageAlt", "imageCredit", "isMaster", "masterVerified", "isLimited",
+  "storageGuide", "imageUrl", "imageAlt", "imageCredit", "gallery", "isMaster", "masterVerified", "isLimited",
   "limitedVerified", "productionCount", "flavorTags", "occasions", "giftPurposes", "pairingCategories",
   "tasteSweetness", "tasteAcidity", "tasteBody", "tasteCarbonation", "tasteAroma", "tasteSource",
   "tasteEvaluatedAt", "tasteNotes", "servingTemp", "glassware", "chillBeforeServing", "afterOpening",

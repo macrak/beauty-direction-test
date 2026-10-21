@@ -7,6 +7,8 @@ export interface SiteSettings {
   brandNameKo: string;
   slogan: string;
   subCopy: string;
+  heroImageUrl: string | null;
+  heroImageAlt: string;
   salesMode: SalesMode;
   showReferencePrice: boolean;
   showDemoData: boolean;
@@ -32,6 +34,8 @@ export const DEFAULT_SETTINGS: SiteSettings = {
   brandNameKo: "술의 격",
   slogan: "술에도 격이 있습니다.",
   subCopy: "시간과 장인정신이 빚어낸 대한민국의 가장 귀한 술.",
+  heroImageUrl: null,
+  heroImageAlt: "",
   salesMode: "SHOWCASE",
   showReferencePrice: true,
   showDemoData: true,

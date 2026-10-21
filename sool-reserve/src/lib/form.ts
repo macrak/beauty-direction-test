@@ -59,4 +59,5 @@ export class FormError extends Error {}
 export interface ActionState {
   ok: boolean;
   message: string;
+  redirectTo?: string; // 저장 후 이동 (클라이언트에서 전체 새로고침으로 최신 데이터 표시)
 }

@@ -1,13 +1,12 @@
 "use server";
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 import type { Prisma } from "@prisma/client";
 import { prisma } from "./db";
 import { requirePartner } from "./auth";
 import { audit, diff } from "./audit";
 import { FormError, int, reqStr, str, type ActionState } from "./form";
 import { AUDITED_PRODUCT_FIELDS, parseProductForm } from "./productForm";
-import { saveImage } from "./uploads";
+import { MAX_GALLERY, saveImage, saveImages } from "./uploads";
 
 // 양조장 관리자는 자기 brewery_id 데이터만 접근 — 모든 쿼리에 breweryId 조건을 서버에서 강제
 function fail(e: unknown): ActionState {
@@ -20,6 +19,16 @@ function fail(e: unknown): ActionState {
   return { ok: false, message: "저장 중 오류가 발생했습니다." };
 }
 
+
+// 상품 갤러리: 기존 사진 중 삭제 체크된 것 제외 + 새 업로드 추가 (최대 MAX_GALLERY장)
+async function mergeGallery(fd: FormData, current: string[]): Promise<string[]> {
+  const remove = new Set(fd.getAll("removeGallery").map(String));
+  const added = await saveImages(fd.getAll("galleryImages"));
+  const next = [...current.filter((u) => !remove.has(u)), ...added];
+  if (next.length > MAX_GALLERY) throw new FormError(`추가 사진은 최대 ${MAX_GALLERY}장까지 등록할 수 있습니다.`);
+  return next;
+}
+
 export async function savePartnerProduct(_s: ActionState, fd: FormData): Promise<ActionState> {
   const user = await requirePartner();
   let id = str(fd, "id");
@@ -30,9 +39,11 @@ export async function savePartnerProduct(_s: ActionState, fd: FormData): Promise
     if (id) {
       const before = await prisma.product.findFirst({ where: { id, breweryId: user.breweryId } });
       if (!before) throw new FormError("수정 권한이 없는 상품입니다.");
+      data.gallery = await mergeGallery(fd, before.gallery);
       const after = await prisma.product.update({ where: { id: before.id }, data });
       await audit(user, "PARTNER_UPDATE", "Product", id, diff(before, after, AUDITED_PRODUCT_FIELDS));
     } else {
+      data.gallery = await mergeGallery(fd, []);
       // 신규 등록은 항상 '검토 대기' + 적격 '미확인' — 플랫폼 검토 후 공개
       const created = await prisma.product.create({
         data: { ...(data as Prisma.ProductUncheckedCreateInput), breweryId: user.breweryId, status: "REVIEW", eligibility: "UNCHECKED" },
@@ -44,7 +55,7 @@ export async function savePartnerProduct(_s: ActionState, fd: FormData): Promise
     return fail(e);
   }
   revalidatePath("/", "layout");
-  redirect(`/partner/products/${id}?saved=1`);
+  return { ok: true, message: "저장되었습니다.", redirectTo: `/partner/products/${id}?saved=1` };
 }
 
 export async function updatePartnerStock(fd: FormData) {

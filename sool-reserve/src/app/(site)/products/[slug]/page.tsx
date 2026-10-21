@@ -72,9 +72,20 @@ export default async function ProductPage({ params }: Params) {
 
       {/* 상단: 이미지 + 요약 */}
       <section className="container-site grid gap-10 pt-6 md:grid-cols-12 md:gap-16 md:pt-12">
-        <div className="relative md:col-span-7">
-          <ProductImage product={p} className="aspect-[4/5] md:sticky md:top-24" />
-          {p.isDemo && <DemoBadge className="absolute left-4 top-4" />}
+        <div className="md:col-span-7">
+          <div className={`relative ${p.gallery.length ? "" : "md:sticky md:top-24"}`}>
+            <ProductImage product={p} className="aspect-[4/5]" />
+            {p.isDemo && <DemoBadge className="absolute left-4 top-4" />}
+          </div>
+          {p.gallery.length > 0 && (
+            <div className="mt-4 grid grid-cols-2 gap-4">
+              {p.gallery.map((u, i) => (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img key={u} src={u} alt={`${p.name} 상세 사진 ${i + 1}`} className="aspect-square w-full bg-beige object-cover" loading="lazy" />
+              ))}
+            </div>
+          )}
+          {p.imageCredit && <p className="mt-2 text-[10px] text-charcoal/40">사진 {p.imageCredit}</p>}
         </div>
         <div className="md:col-span-5 md:py-8">
           <nav className="text-[11px] tracking-wider text-charcoal/45" aria-label="경로">
@@ -340,7 +351,6 @@ export default async function ProductPage({ params }: Params) {
           </p>
           {notices.INTERMEDIARY && <p>{notices.INTERMEDIARY.body}</p>}
           {notices.HEALTH_WARNING && <p>{notices.HEALTH_WARNING.body}</p>}
-          {p.imageCredit && <p>이미지 출처: {p.imageCredit}</p>}
           {p.price !== null && p.priceMode === "REFERENCE" && <p>표시 가격 {won(p.price)}은 참고 소비자가이며 실제 판매가와 다를 수 있습니다.</p>}
         </div>
       </section>

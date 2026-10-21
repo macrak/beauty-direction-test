@@ -50,6 +50,19 @@ export default async function SettingsPage() {
           <F label="한글 브랜드명" name="brandNameKo" defaultValue={s.brandNameKo} required />
           <F label="메인 슬로건" name="slogan" defaultValue={s.slogan} required span={2} />
           <F label="서브 카피" name="subCopy" defaultValue={s.subCopy} required span={4} />
+          <label className="block md:col-span-2">
+            <span className="adm-label">메인 히어로 사진 (세로형 권장, JPG/PNG/WEBP 5MB 이하)</span>
+            <input type="file" name="heroImage" accept="image/jpeg,image/png,image/webp" className="adm-input" />
+            <span className="mt-1 block text-[11px] text-charcoal/45">
+              {s.heroImageUrl ? `현재: ${s.heroImageUrl}` : "미등록 — 병 일러스트 표시. 실제 판매 상품의 연출 사진만 사용하세요(타사·실존 타 상품 사진 금지)."}
+            </span>
+          </label>
+          <F label="히어로 사진 대체 텍스트" name="heroImageAlt" defaultValue={s.heroImageAlt} />
+          {s.heroImageUrl && (
+            <div className="flex items-end">
+              <Check label="히어로 사진 삭제" name="removeHeroImage" />
+            </div>
+          )}
         </Section>
 
         <Section title="상품 노출 기준 · 가격 · 수수료">

@@ -20,3 +20,14 @@ export async function saveImage(file: File | null): Promise<string | null> {
   await writeFile(path.join(uploadDir(), name), Buffer.from(await file.arrayBuffer()));
   return `/api/uploads/${name}`;
 }
+
+export async function saveImages(files: FormDataEntryValue[]): Promise<string[]> {
+  const out: string[] = [];
+  for (const f of files) {
+    const url = await saveImage(f as File);
+    if (url) out.push(url);
+  }
+  return out;
+}
+
+export const MAX_GALLERY = 8;

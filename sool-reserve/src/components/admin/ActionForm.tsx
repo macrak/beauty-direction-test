@@ -1,4 +1,5 @@
 "use client";
+import { useEffect } from "react";
 import { useFormState, useFormStatus } from "react-dom";
 import type { ActionState } from "@/lib/form";
 
@@ -26,6 +27,10 @@ export default function ActionForm({
   stickyFooter?: boolean;
 }) {
   const [state, formAction] = useFormState(action, { ok: false, message: "" });
+  // 서버 액션 내 redirect()는 동일 경로에서 화면이 갱신되지 않는 경우가 있어 전체 이동으로 처리
+  useEffect(() => {
+    if (state.redirectTo) window.location.assign(state.redirectTo);
+  }, [state]);
   const msg = state.message ? (
     <p className={`rounded px-3 py-2 text-sm ${state.ok ? "bg-[#E3EFE5] text-[#22603A]" : "bg-[#F6E1E1] text-[#9B1C1C]"}`}>{state.message}</p>
   ) : null;

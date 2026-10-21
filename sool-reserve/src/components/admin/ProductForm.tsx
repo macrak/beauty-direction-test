@@ -80,6 +80,23 @@ export default function ProductForm({
             <F label="이미지 대체 텍스트" name="imageAlt" defaultValue={p?.imageAlt} />
             <F label="이미지 출처/저작권" name="imageCredit" defaultValue={p?.imageCredit} />
             {p?.imageUrl && <Check label="현재 이미지 삭제" name="removeImage" />}
+            <label className="block md:col-span-4">
+              <span className="adm-label">추가 사진 (병 디테일·패키지·선물 구성 등, 여러 장 선택 가능 · 최대 8장)</span>
+              <input type="file" name="galleryImages" multiple accept="image/jpeg,image/png,image/webp" className="adm-input" />
+            </label>
+            {p && p.gallery.length > 0 && (
+              <div className="flex flex-wrap gap-3 md:col-span-4">
+                {p.gallery.map((u) => (
+                  <label key={u} className="w-24 text-center text-[11px]">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={u} alt="" className="aspect-square w-24 rounded border border-line object-cover" />
+                    <span className="mt-1 inline-flex items-center gap-1">
+                      <input type="checkbox" name="removeGallery" value={u} className="accent-burgundy" /> 삭제
+                    </span>
+                  </label>
+                ))}
+              </div>
+            )}
           </Section>
 
           <Section title="B. 맛 프로필" desc="1~5점. 확인되지 않은 항목은 비워 두세요(해당 없음/미평가). 임의 점수 입력 금지.">

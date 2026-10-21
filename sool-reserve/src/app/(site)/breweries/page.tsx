@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import BreweryVisual from "@/components/BreweryVisual";
+import BreweryPhoto from "@/components/BreweryPhoto";
 import { DemoBadge } from "@/components/Badges";
 import Reveal from "@/components/Reveal";
 import { prisma } from "@/lib/db";
@@ -27,14 +27,7 @@ export default async function BreweriesPage() {
           <Reveal key={b.id}>
             <Link href={`/breweries/${b.slug}`} className="group block">
               <div className="relative overflow-hidden">
-                {b.imageUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={b.imageUrl} alt={`${b.name} 양조장`} className="aspect-[10/7] w-full object-cover transition duration-700 group-hover:scale-[1.02]" />
-                ) : (
-                  <div className="transition duration-700 group-hover:scale-[1.02]">
-                    <BreweryVisual seed={i} />
-                  </div>
-                )}
+                <BreweryPhoto brewery={b} seed={i} className="transition duration-700 group-hover:scale-[1.02]" />
                 {b.isDemo && <DemoBadge className="absolute left-3 top-3" />}
               </div>
               <p className="eyebrow mt-5">
