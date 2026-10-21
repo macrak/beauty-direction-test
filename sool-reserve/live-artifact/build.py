@@ -5,7 +5,7 @@ subprocess.run(["npx", "tailwindcss", "-c", f"{d}/tw.config.cjs", "-i", f"{d}/tw
 css = open("tw.css").read()
 art = open("art.json").read().replace("</", "<\\/")
 head = open("head.html").read().replace("<style>/*TW*/</style>", "<style>" + css + "</style>")
-js = "\n".join(open(f).read() for f in ["app1.js", "app2.js", "app3.js", "app4.js"])
+js = "\n".join(open(f).read() for f in ["app1.js", "app2.js", "app3.js", "app5.js", "app4.js"])
 page = head + '\n<script id="art-data" type="application/json">' + art + "</script>\n<script>\n" + js + "\n</script>\n"
 open("index.html", "w").write(page)
 data = json.load(open("data.json"))

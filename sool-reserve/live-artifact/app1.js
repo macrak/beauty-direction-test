@@ -33,7 +33,7 @@ const DEFAULT_SETTINGS = {
   salesMode: "SHOWCASE", showReferencePrice: true, showDemoData: true, defaultCommissionRate: 15, minListingPrice: 100000,
   priceTiers: [100000, 200000, 300000, 500000],
   curationWeights: { scoreEligibility: 1.5, scoreReputation: 1, scoreStory: 1, scoreQuality: 1.5, scoreRarity: 1, scoreDesign: 0.8, scoreGift: 1.2, scoreProfit: 1.2, scoreSupply: 1, scoreLogistics: 0.8 },
-  pgContractConfirmed: false, settlementStructureConfirmed: false, heroImageUrl: null, heroImageAlt: "",
+  pgContractConfirmed: false, settlementStructureConfirmed: false, operatorLicenseConfirmed: false, giftWrapFee: 5000, heroImageUrl: null, heroImageAlt: "",
   business: { companyName: "(운영사 등록 전)", representative: "-", businessNumber: "-", mailOrderNumber: "-", address: "-", email: "hello@soolreserve.example", phone: "-" },
   featured: { MAIN: [], GIFT: [], PROFIT: [], LIMITED: [], SEASONAL: [] },
 };
@@ -46,6 +46,7 @@ const S = {
   f: { q: "", type: "", taste: [], occasion: "", min: "", sort: "" },
   quiz: { step: 0, tastes: [], types: [], food: "", purpose: "", budget: null, results: null },
   sent: {}, dirty: false, saving: false,
+  cat: { products: {}, breweries: {} }, ops: { products: {}, breweries: {} }, orders: {}, suppliers: {}, pos: {}, cartN: 0, ageUntil: null, giftWrapOn: false, co: null, orderTab: "", settleMonth: null,
 };
 
 // ─── 유틸 ───────────────────────────────────────────────
@@ -61,7 +62,7 @@ const sorted = (o) => Object.values(o).sort((a, b) => (a.sortOrder ?? 0) - (b.so
 // ─── 수익 계산 (서버 lib/economics.ts와 동일) ─────────────────
 function calcEconomics(i) {
   const price = Math.max(0, Math.round(i.price || 0));
-  const basisAmount = i.vatBasis === "EXCLUSIVE" ? Math.floor(price / 1.1) : price;
+  const basisAmount = i.vatBasis === "EXCLUSIVE" ? Math.floor((price * 10) / 11) : price;
   const commission = Math.round((basisAmount * i.commissionRate) / 100);
   const pgTotal = Math.round((price * (i.pgRate || 0)) / 100);
   const platformPgCost = i.pgBearer === "PLATFORM" ? pgTotal : 0;
@@ -70,9 +71,13 @@ function calcEconomics(i) {
   return { basisAmount, commission, platformPgCost, contribution, marginOnCommission: commission > 0 ? r1((contribution / commission) * 100) : null, marginOnGmv: price > 0 ? r1((contribution / price) * 100) : null, sellerPayout: price - commission - (i.pgBearer === "SELLER" ? pgTotal : 0) };
 }
 function econ(p) {
+  if (p.tradeModel === "WHOLESALE") {
+    const w = calcWholesale(p);
+    return { model: "WHOLESALE", commissionRate: null, basisAmount: w.netSales, commission: w.grossMargin, platformPgCost: w.pgCost, contribution: w.contribution, marginOnCommission: w.marginOnSales, marginOnGmv: p.price > 0 ? Math.round((w.contribution / p.price) * 1000) / 10 : null, sellerPayout: null, w };
+  }
   const b = S.breweries[p.brewery];
   const rate = p.commissionRate ?? b?.defaultCommissionRate ?? S.settings.defaultCommissionRate;
-  return { commissionRate: rate, ...calcEconomics({ ...p, commissionRate: rate }) };
+  return { model: "COMMISSION", commissionRate: rate, ...calcEconomics({ ...p, commissionRate: rate }) };
 }
 function curation(p) {
   let sum = 0, ws = 0, n = 0;
@@ -86,7 +91,7 @@ function visibleBrewery(b) { return b && b.onboardingStatus === "LISTED" && (S.s
 function publicProducts() { return sorted(S.products).filter((p) => p.status === "PUBLISHED" && visibleBrewery(S.breweries[p.brewery]) && (S.settings.showDemoData || !p.isDemo)); }
 function publicArticles() { const now = Date.now(); return Object.values(S.articles).filter((a) => a.status === "PUBLISHED" && a.publishedAt && new Date(a.publishedAt).getTime() <= now && (S.settings.showDemoData || !a.isDemo)).sort((a, b) => new Date(b.publishedAt) - new Date(a.publishedAt)); }
 function currentNotice(type) { const now = Date.now(); return Object.values(S.notices).filter((n) => n.type === type && new Date(n.effectiveFrom).getTime() <= now).sort((a, b) => new Date(b.effectiveFrom) - new Date(a.effectiveFrom))[0]; }
-const shownPrice = (p) => (priceMode() === "HIDDEN" ? null : p.price);
+const shownPrice = (p) => (priceMode() === "HIDDEN" && !commerceOn() ? null : p.price);
 
 const TASTE_FILTERS = [
   ["sweet", "달콤한", (p) => (p.tasteSweetness ?? 0) >= 4], ["dry", "드라이한", (p) => p.tasteSweetness != null && p.tasteSweetness <= 2],

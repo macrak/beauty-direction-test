@@ -24,9 +24,9 @@ function readForm(form) {
 const formError = (form, msg) => { const p = form.querySelector("[data-err]"); if (p) { p.textContent = msg; p.classList.remove("hidden"); } else toast(msg); };
 
 async function audit(action, entity, id, changes) {
-  try { await S.db.collection("cat/v1/audit").add({ at: new Date().toISOString(), by: S.uid, action, entity, id, changes: changes || null }); } catch {}
+  try { await S.db.collection("ops/v1/audit").add({ at: new Date().toISOString(), by: S.uid, action, entity, id, changes: changes || null }); } catch {}
 }
-const AUDITED = ["price", "stock", "status", "eligibility", "legalClass", "commissionRate", "pgBearer", "platformShippingCost", "platformPromoCost", "otherVariableCost", "isMaster", "masterVerified", "isLimited", "limitedVerified"];
+const AUDITED = ["price", "stock", "status", "eligibility", "legalClass", "tradeModel", "supplierId", "wholesaleCost", "commissionRate", "pgBearer", "platformShippingCost", "platformPromoCost", "otherVariableCost", "isMaster", "masterVerified", "isLimited", "limitedVerified"];
 const diff = (a = {}, b = {}) => Object.fromEntries(AUDITED.filter((k) => JSON.stringify(a[k]) !== JSON.stringify(b[k])).map((k) => [k, { from: a[k] ?? null, to: b[k] ?? null }]));
 
 async function saveProduct(form) {
@@ -40,6 +40,8 @@ async function saveProduct(form) {
   if (!hasTaste) v.tasteSource = "NONE";
   if (v.legalClass === "NONE" && v.eligibility === "VERIFIED") throw new FormErr("법적 분류가 '해당 없음(일반 주류)'인 상품은 통신판매 적격으로 설정할 수 없습니다.");
   if (!v.isLimited) v.productionCount = null;
+  if (v.tradeModel === "WHOLESALE" && !v.supplierId) throw new FormErr("직매입 상품은 공급처(도매상)를 선택해 주세요.");
+  if (v.tradeModel !== "WHOLESALE") v.supplierId = null;
   v.pairings = [0, 1, 2, 3].map((i) => ({ category: v[`pair_${i}_category`], name: v[`pair_${i}_name`], description: v[`pair_${i}_description`] || undefined, recipe: v[`pair_${i}_recipe`] || undefined })).filter((x) => x.category && x.name).map((x) => JSON.parse(JSON.stringify(x)));
   for (let i = 0; i < 4; i++) for (const f of ["category", "name", "description", "recipe"]) delete v[`pair_${i}_${f}`];
   v.pairingCategories = [...new Set(v.pairings.map((x) => x.category))];
@@ -52,7 +54,7 @@ async function saveProduct(form) {
   const before = S.products[docId];
   const doc = { ...(before || { gallery: [], isDemo: false, wholesaleCost: null }), ...v, slug: docId };
   delete doc.id;
-  await S.db.doc(`cat/v1/products/${docId}`).set(doc);
+  await writeProduct(docId, doc);
   await audit(id ? "UPDATE" : "CREATE", "product", docId, id ? diff(before, doc) : { name: doc.name });
   return `admin.product.${docId}`;
 }
@@ -61,7 +63,7 @@ async function quickSave(form) {
   const doc = { ...before, price: Number(form.price.value), stock: Number(form.stock.value), status: form.status.value };
   if (!(doc.price >= 0) || !(doc.stock >= 0)) throw new FormErr("판매가·재고를 확인해 주세요.");
   delete doc.id;
-  await S.db.doc(`cat/v1/products/${id}`).set(doc);
+  await writeProduct(id, doc);
   await audit("QUICK_UPDATE", "product", id, diff(before, doc));
   void v;
 }
@@ -80,7 +82,7 @@ async function saveBrewery(form) {
   delete v.slug;
   const doc = { ...(before || { isDemo: false, gallery: [] }), ...v, slug: docId, compliance: { ...(before?.compliance || {}), ...compliance } };
   delete doc.id;
-  await S.db.doc(`cat/v1/breweries/${docId}`).set(JSON.parse(JSON.stringify(doc)));
+  await writeBrewery(docId, doc);
   await audit(id ? "UPDATE" : "CREATE", "brewery", docId, { onboardingStatus: doc.onboardingStatus, salesEnabled: doc.salesEnabled, compliance: doc.compliance.status });
   return `admin.brewery.${docId}`;
 }
@@ -104,9 +106,9 @@ async function saveSettings(form) {
   if (!v.priceTiers?.length) throw new FormErr("가격 구간을 1개 이상 입력해 주세요.");
   const weights = {}, business = {};
   for (const k of Object.keys(v)) { if (k.startsWith("w_")) { weights[k.slice(2)] = v[k]; delete v[k]; } else if (k.startsWith("b_")) { business[k.slice(2)] = v[k] || ""; delete v[k]; } }
-  const doc = { ...S.settings, ...v, curationWeights: weights, business, salesMode: "SHOWCASE" };
+  const doc = { ...S.settings, ...v, curationWeights: weights, business, salesMode: v.salesMode === "PRIVATE_TEST" ? "PRIVATE_TEST" : "SHOWCASE" };
   await S.db.doc("cat/v1").set(doc);
-  await audit("UPDATE", "settings", null, { showDemoData: doc.showDemoData, showReferencePrice: doc.showReferencePrice });
+  await audit("UPDATE", "settings", null, { salesMode: doc.salesMode, showDemoData: doc.showDemoData, showReferencePrice: doc.showReferencePrice, operatorLicenseConfirmed: doc.operatorLicenseConfirmed });
   return null;
 }
 async function saveNotice(form) {
@@ -163,6 +165,9 @@ function view(r) {
     case "support": return vSupport();
     case "story": return vStory();
     case "legal": return vLegal(r.arg);
+    case "cart": return vCart();
+    case "checkout": return vCheckout();
+    case "order": return vOrderDone(r.arg);
     default: return vNotFound();
   }
 }
@@ -187,6 +192,15 @@ function adminView(r) {
     case "legal": return aLegal();
     case "settings": return aSettings();
     case "audit": return aAudit();
+    case "orders": return aOrders();
+    case "order": return aOrder(arg);
+    case "settlements": return aSettlements();
+    case "suppliers": return aSuppliers();
+    case "supplier": return aSupplierForm(arg);
+    case "supplier-new": return aSupplierForm("");
+    case "pos": return aPOs();
+    case "po": return aPO(arg);
+    case "po-new": return aPONew(arg);
     default: return aDashboard();
   }
 }
@@ -255,10 +269,20 @@ document.addEventListener("click", async (ev) => {
       S.delArm = null;
       const coll = t.dataset.kind === "product" ? "products" : "articles";
       await S.db.doc(`cat/v1/${coll}/${v}`).delete();
+      if (coll === "products") { try { await S.db.doc(`ops/v1/products/${v}`).delete(); } catch {} }
       if (coll === "products") { const fe = { ...S.settings.featured }; let changed = false; for (const k of Object.keys(fe)) { if ((fe[k] || []).includes(v)) { fe[k] = fe[k].filter((x) => x !== v); changed = true; } } if (changed) await saveSettingsPatch({ featured: fe }); }
       await audit("DELETE", t.dataset.kind, v);
       S.dirty = false; toast("삭제했습니다."); location.hash = coll === "products" ? "admin.products" : "admin.magazine"; return;
     }
+    case "qty": { const q2 = document.getElementById("qty"); if (!q2) return; q2.textContent = String(Math.max(1, Math.min(Number(q2.dataset.max) || 1, Number(q2.textContent) + Number(v)))); return; }
+    case "add-cart": { const n = Number(document.getElementById("qty")?.textContent || 1); addCart(v, n); rerender(); const a = document.getElementById("added"); if (a) { a.classList.remove("hidden"); a.classList.add("flex"); } return toast(`장바구니에 ${n}병 담았습니다.`); }
+    case "cart-qty": { const c = readCart(), it = c.find((x) => x.id === t.dataset.id); if (!it) return; const max = Math.min(24, S.products[it.id]?.stock || 24); it.qty = Math.max(1, Math.min(max, it.qty + Number(v))); writeCart(c); return rerender(); }
+    case "cart-del": writeCart(readCart().filter((x) => x.id !== t.dataset.id)); return rerender();
+    case "age-verify": { const fm = t.closest("form"); if (fm) S.co = Object.fromEntries([...new FormData(fm).entries()].map(([k, x]) => [k, String(x)])); t.disabled = true; t.textContent = "인증 중…"; await new Promise((r) => setTimeout(r, 600)); S.ageUntil = Date.now() + 30 * 60000; toast("테스트 성인 인증이 완료되었습니다."); return rerender(); }
+    case "gift-toggle": { const fm = t.closest("form"); if (fm) S.co = Object.fromEntries([...new FormData(fm).entries()].map(([k, x]) => [k, String(x)])); S.giftWrapOn = t.checked; return rerender(); }
+    case "order-tab": S.orderTab = v; return rerender();
+    case "settle-month": S.settleMonth = v; return rerender();
+    case "po-status": { t.disabled = true; try { await poStatus(t.dataset.no, v); toast(v === "RECEIVED" ? "입고 처리했습니다. 재고와 매입가가 반영되었습니다." : "상태를 변경했습니다."); } catch (err) { t.disabled = false; toast(err instanceof FormErr ? err.message : "변경하지 못했습니다."); } return; }
     case "notice-del": { const n = S.notices[v]; if (!n || new Date(n.effectiveFrom) <= new Date()) return; await S.db.doc(`cat/v1/notices/${v}`).delete(); await audit("DELETE", "notice", v); return toast("삭제했습니다."); }
   }
 });
@@ -269,7 +293,7 @@ document.addEventListener("input", (ev) => {
   if (el.dataset.f) { S.f[el.dataset.f] = el.value; const pos = el.selectionStart; render(); const again = document.getElementById(el.id); if (again && el.tagName === "INPUT") { again.focus(); try { again.setSelectionRange(pos, pos); } catch {} } return; }
   if (el.dataset.sel) { S.sel[el.dataset.sel] = el.type === "checkbox" ? el.checked : el.value; const id = el.dataset.sel; render(); const again = document.querySelector(`[data-sel="${id}"]`); if (again && el.type !== "checkbox") again.focus(); return; }
   const form = el.closest("form[data-form]");
-  if (form && ["product", "brewery", "article", "settings", "notice"].includes(form.dataset.form)) {
+  if (form && ["product", "brewery", "article", "settings", "notice", "supplier", "po", "checkout"].includes(form.dataset.form)) {
     S.dirty = true;
     if (form.dataset.form === "product") { try { const v = readForm(form); const box = document.getElementById("econ-preview"); if (box) box.innerHTML = econPreview({ ...v, commissionRate: v.commissionRate ?? "" }); } catch {} }
   }
@@ -322,15 +346,16 @@ document.addEventListener("submit", async (ev) => {
   if (!form) return;
   ev.preventDefault();
   const kind = form.dataset.form;
-  const handlers = { inquiry: submitInquiry, product: saveProduct, quick: quickSave, brewery: saveBrewery, article: saveArticle, settings: saveSettings, notice: saveNotice };
+  const handlers = { inquiry: submitInquiry, product: saveProduct, quick: quickSave, brewery: saveBrewery, article: saveArticle, settings: saveSettings, notice: saveNotice, checkout: placeOrder, advance: advanceOrder, damage: reportDamage, "cancel-order": cancelOrder, supplier: saveSupplier, po: createPO };
+  const MSG = { checkout: "테스트 주문이 완료되었습니다.", advance: "배송 상태를 변경했습니다.", damage: "파손 신고를 기록했습니다.", "cancel-order": "주문을 취소하고 환불 처리했습니다.", po: "발주서를 만들었습니다." };
   if (kind !== "inquiry" && !S.isAdmin) return toast("관리자만 저장할 수 있습니다.");
   const btn = form.querySelector("button:not([type=button])");
-  if (btn) { btn.disabled = true; btn.dataset.label = btn.textContent; btn.textContent = "저장 중…"; }
+  if (btn) { btn.disabled = true; btn.dataset.label = btn.textContent; btn.textContent = kind === "checkout" ? "결제 처리 중…" : "저장 중…"; }
   try {
     const next = await handlers[kind](form);
     S.dirty = false;
     if (kind === "inquiry") { S.sent[form.dataset.type] = true; render(); return; }
-    toast("저장되었습니다. 고객 화면에 반영되었습니다.");
+    toast(MSG[kind] || "저장되었습니다. 고객 화면에 반영되었습니다.");
     if (next && location.hash !== `#${next}`) location.hash = next; else render();
   } catch (err) {
     if (btn) { btn.disabled = false; btn.textContent = btn.dataset.label; }
@@ -343,6 +368,7 @@ window.addEventListener("hashchange", onRoute);
 // ─── 저장소 연결 ─────────────────────────────────────────
 async function init() {
   lastRoute = location.hash;
+  S.cartN = readCart().reduce((a, x) => a + x.qty, 0);
   render();
   const c = window.claude;
   if (!c || typeof c.use !== "function") { S.status = "offline"; return render(); }
@@ -353,9 +379,18 @@ async function init() {
   if (user) { S.isAdmin = await user.canEdit(); S.uid = await user.id(); }
   const fail = (e2) => { console.warn("db", e2?.code); };
   db.doc("cat/v1").onSnapshot((s) => { const d = s.exists ? s.data() : {}; S.settings = { ...DEFAULT_SETTINGS, ...d, business: { ...DEFAULT_SETTINGS.business, ...(d.business || {}) }, featured: { ...DEFAULT_SETTINGS.featured, ...(d.featured || {}) } }; S.loaded.settings = true; ready(); }, fail);
-  const coll = (name) => db.collection(`cat/v1/${name}`).onSnapshot((qs) => { S[name] = Object.fromEntries(qs.docs.map((d) => [d.id, { ...d.data(), id: d.id }])); S.loaded[name] = true; ready(); }, fail);
+  const toMap = (qs) => Object.fromEntries(qs.docs.map((d) => [d.id, { ...d.data(), id: d.id }]));
+  const coll = (name) => db.collection(`cat/v1/${name}`).onSnapshot((qs) => { const m = toMap(qs); if (name in S.cat) { S.cat[name] = m; remerge(); } else S[name] = m; S.loaded[name] = true; ready(); }, fail);
   ["products", "breweries", "articles", "notices"].forEach(coll);
-  if (S.isAdmin) db.collection("cat/v1/audit").orderBy("at", "desc").limit(300).onSnapshot((qs) => { S.audit = qs.docs.map((d) => ({ ...d.data(), id2: d.id })); if (route().arg === "audit") onData(); }, fail);
+  if (S.isAdmin) {
+    S.loaded.opsProducts = S.loaded.opsBreweries = false;
+    db.collection("ops/v1/products").onSnapshot((qs) => { S.ops.products = toMap(qs); remerge(); S.loaded.opsProducts = true; ready(); }, (x) => { fail(x); S.loaded.opsProducts = true; ready(); });
+    db.collection("ops/v1/breweries").onSnapshot((qs) => { S.ops.breweries = toMap(qs); remerge(); S.loaded.opsBreweries = true; ready(); }, (x) => { fail(x); S.loaded.opsBreweries = true; ready(); });
+    db.collection("ops/v1/orders").onSnapshot((qs) => { S.orders = Object.fromEntries(qs.docs.map((d) => [d.id, d.data()])); onData(); }, fail);
+    db.collection("ops/v1/suppliers").onSnapshot((qs) => { S.suppliers = toMap(qs); onData(); }, fail);
+    db.collection("ops/v1/pos").onSnapshot((qs) => { S.pos = Object.fromEntries(qs.docs.map((d) => [d.id, d.data()])); onData(); }, fail);
+  }
+  if (S.isAdmin) db.collection("ops/v1/audit").orderBy("at", "desc").limit(300).onSnapshot((qs) => { S.audit = qs.docs.map((d) => ({ ...d.data(), id2: d.id })); if (route().arg === "audit") onData(); }, fail);
   if (S.isAdmin) db.collection("inq").onSnapshot((qs) => { S.inquiries = qs.docs.map((d) => ({ ...d.data(), id: d.id })); onData(); }, fail);
 }
 function ready() { if (Object.values(S.loaded).every(Boolean)) S.status = "ready"; onData(); }
