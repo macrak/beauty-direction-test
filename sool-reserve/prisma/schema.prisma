@@ -1,0 +1,474 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── 양조장 · 판매자 ──────────────────────────────────────────
+
+enum OnboardingStatus {
+  APPLIED          // 입점 신청
+  DOCS_REVIEW      // 서류 확인
+  PRODUCT_REVIEW   // 상품 검토
+  PROFIT_REVIEW    // 수익성 검토
+  CONTRACT         // 계약
+  APPROVED         // 관리자 승인
+  LISTED           // 상품 노출
+  REJECTED         // 반려
+}
+
+model Brewery {
+  id                    String           @id @default(cuid())
+  slug                  String           @unique
+  name                  String
+  nameEn                String?
+  region                String
+  foundedYear           Int?
+  tagline               String?
+  history               String?
+  artisan               String?          // 장인·제조자 이야기
+  artisanTitle          String?          // 예: 대한민국 식품명인 (검증된 경우만)
+  ingredientOrigin      String?
+  waterAndNuruk         String?
+  method                String?
+  aging                 String?
+  philosophy            String?
+  awards                String?          // 수상 내역 (검증된 경우만)
+  awardsVerified        Boolean          @default(false)
+  imageUrl              String?
+  videoUrl              String?
+  website               String?
+  onboardingStatus      OnboardingStatus @default(APPLIED)
+  salesEnabled          Boolean          @default(false) // 판매자로서 판매 활성 (서류 승인 후)
+  defaultCommissionRate Float?           // % — 없으면 시스템 기본값
+  supplyTerms           String?          // 공급 조건 (내부)
+  isDemo                Boolean          @default(false)
+  createdAt             DateTime         @default(now())
+  updatedAt             DateTime         @updatedAt
+
+  compliance   SellerCompliance?
+  products     Product[]
+  users        User[]
+  sellerOrders SellerOrder[]
+  settlements  Settlement[]
+}
+
+enum ReviewStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model SellerCompliance {
+  id                   String       @id @default(cuid())
+  breweryId            String       @unique
+  brewery              Brewery      @relation(fields: [breweryId], references: [id], onDelete: Cascade)
+  businessName         String?
+  representative       String?
+  businessNumber       String?      // 사업자등록번호
+  address              String?
+  contactPhone         String?
+  contactEmail         String?
+  mailOrderNumber      String?      // 통신판매업 신고번호
+  liquorLicenseNote    String?      // 제조면허 정보
+  traditionalBasisNote String?      // 전통주(민속주/지역특산주) 근거
+  documentUrls         String[]
+  status               ReviewStatus @default(PENDING)
+  reviewedBy           String?
+  reviewedAt           DateTime?
+  reviewNote           String?
+  updatedAt            DateTime     @updatedAt
+}
+
+// ─── 상품 ────────────────────────────────────────────────
+
+enum LiquorType {
+  DISTILLED_SOJU  // 증류식 소주
+  YAKJU           // 약주
+  CHEONGJU        // 청주
+  TAKJU           // 탁주
+  FRUIT_WINE      // 과실주
+  OTHER           // 기타
+}
+
+enum LegalClass {
+  FOLK          // 민속주
+  REGIONAL      // 지역특산주
+  NONE          // 해당 없음 (일반 주류)
+  UNKNOWN       // 미확인
+}
+
+enum EligibilityStatus {
+  UNCHECKED     // 미확인
+  IN_REVIEW     // 검토 중
+  VERIFIED      // 통신판매 적격 확인
+  INELIGIBLE    // 부적격 — 소개 전용
+}
+
+enum TradeModel {
+  COMMISSION    // 중개 (MVP 활성)
+  WHOLESALE     // 매입 (비활성 — 별도 면허 필요)
+}
+
+enum ProductStatus {
+  DRAFT
+  REVIEW
+  PUBLISHED
+  HIDDEN
+}
+
+enum TasteSource {
+  MANUFACTURER  // 제조사 제공
+  IN_HOUSE      // 자체 테이스팅
+  NONE          // 미등록
+}
+
+enum VatBasis {
+  INCLUSIVE     // 판매가(VAT 포함) 기준
+  EXCLUSIVE     // VAT 제외 금액 기준
+}
+
+enum CostBearer {
+  PLATFORM
+  SELLER
+}
+
+enum StorageType {
+  AMBIENT       // 상온
+  REFRIGERATED  // 냉장
+}
+
+model Product {
+  id                String            @id @default(cuid())
+  slug              String            @unique
+  name              String
+  nameEn            String?
+  breweryId         String
+  brewery           Brewery           @relation(fields: [breweryId], references: [id])
+  region            String?
+  liquorType        LiquorType
+  legalClass        LegalClass        @default(UNKNOWN)
+  eligibility       EligibilityStatus @default(UNCHECKED)
+  eligibilityNote   String?
+  tradeModel        TradeModel        @default(COMMISSION)
+  status            ProductStatus     @default(DRAFT)
+  summary           String?           // 카드용 한 줄 특징
+  description       String?
+  abv               Float
+  volumeMl          Int
+  ingredients       String            // 원재료 및 함량
+  origin            String?           // 주요 원산지
+  productionMethod  String?
+  agingMethod       String?
+  agingPeriod       String?
+  shelfLife         String?           // 유통기한 / 품질유지기한
+  storageGuide      String?
+  imageUrl          String?
+  imageAlt          String?
+  imageCredit       String?
+
+  // 가격 · 재고
+  price             Int               // 판매가 (원, VAT 포함)
+  stock             Int               @default(0)
+
+  // 큐레이션
+  isMaster          Boolean           @default(false) // 명인주
+  masterVerified    Boolean           @default(false)
+  isLimited         Boolean           @default(false)
+  limitedVerified   Boolean           @default(false)
+  productionCount   Int?              // 한정 생산 수량 (검증된 경우만 표시)
+  flavorTags        String[]          // 예: 부드러운
+  occasions         String[]          // 상황별
+  giftPurposes      String[]          // 선물 목적별
+  pairingCategories String[]          // 한식, 육류 ...
+  sortOrder         Int               @default(0)
+
+  // 맛 프로필 (1~5, null = 해당 없음/미평가)
+  tasteSweetness    Int?
+  tasteAcidity      Int?
+  tasteBody         Int?
+  tasteCarbonation  Int?
+  tasteAroma        Int?
+  tasteSource       TasteSource       @default(NONE)
+  tasteEvaluator    String?
+  tasteEvaluatedAt  DateTime?
+  tasteNotes        String?
+
+  // 음용 가이드
+  servingTemp       String?
+  glassware         String?
+  chillBeforeServing Boolean?
+  afterOpening      String?
+  aromaNotes        String?
+  pairings          Json?             // [{category,name,description,recipe}]
+
+  // 선물
+  giftRecommendFor  String?
+  giftBoxContents   String?
+  giftWrapOptions   String?
+  shoppingBag       Boolean           @default(false)
+  messageCard       Boolean           @default(false)
+  giftDelivery      Boolean           @default(false)
+
+  // 배송 · 보관
+  storageType       StorageType       @default(AMBIENT)
+  storageTemp       String?
+  coldChainRequired Boolean           @default(false)
+  coldPackaging     String?
+  shipDays          String[]          // 출고 가능 요일
+  noShipBeforeHoliday Boolean         @default(false)
+  shipRegions       String?
+  protectivePackaging String?
+  carrier           String?
+  shippingFee       Int               @default(0)
+  damagePolicy      String?
+
+  // 수익 (내부 — 고객 노출 금지)
+  vatBasis          VatBasis          @default(INCLUSIVE)
+  commissionRate    Float?            // % — null이면 양조장/시스템 기본값
+  pgRate            Float             @default(3.3)
+  pgBearer          CostBearer        @default(PLATFORM)
+  platformShippingCost Int            @default(0)
+  platformPromoCost Int               @default(0)
+  otherVariableCost Int               @default(0)
+  wholesaleCost     Int?              // 매입형 전용 (비활성)
+  expectedMonthlyUnits Int            @default(0)
+
+  // 선별 평가 점수 (1~5, null = 미평가) — 근거 없는 자동 생성 금지
+  scoreEligibility  Int?
+  scoreReputation   Int?
+  scoreStory        Int?
+  scoreQuality      Int?
+  scoreRarity       Int?
+  scoreDesign       Int?
+  scoreGift         Int?
+  scoreProfit       Int?
+  scoreSupply       Int?
+  scoreLogistics    Int?
+  scoreNote         String?
+
+  // SEO
+  metaTitle         String?
+  metaDescription   String?
+
+  isDemo            Boolean           @default(false)
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+
+  featured   FeaturedSlot[]
+  orderItems OrderItem[]
+
+  @@index([status])
+  @@index([breweryId])
+}
+
+enum SlotType {
+  MAIN
+  GIFT
+  PROFIT
+  LIMITED
+  SEASONAL
+}
+
+model FeaturedSlot {
+  id        String    @id @default(cuid())
+  slot      SlotType
+  productId String
+  product   Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  position  Int       @default(0)
+  startsAt  DateTime?
+  endsAt    DateTime?
+
+  @@unique([slot, productId])
+}
+
+// ─── 운영 · 콘텐츠 ────────────────────────────────────────
+
+model Setting {
+  key       String   @id
+  value     Json
+  updatedAt DateTime @updatedAt
+}
+
+enum NoticeType {
+  HEALTH_WARNING   // 음주 경고문구
+  YOUTH_NOTICE     // 청소년 판매 금지
+  INTERMEDIARY     // 통신판매중개자 고지
+  TERMS            // 이용약관
+  PRIVACY          // 개인정보 처리방침
+  SHIPPING_POLICY  // 배송 정책
+  RETURN_POLICY    // 교환·반품
+}
+
+model LegalNotice {
+  id            String     @id @default(cuid())
+  type          NoticeType
+  title         String
+  body          String
+  version       String
+  effectiveFrom DateTime
+  sourceNote    String?    // 근거 법령/고시
+  createdAt     DateTime   @default(now())
+
+  @@index([type, effectiveFrom])
+}
+
+enum InquiryType {
+  PARTNERSHIP  // 입점 문의
+  CORPORATE    // 기업 VIP
+  CUSTOMER     // 고객 문의
+  NEWSLETTER   // 정보 구독
+}
+
+enum InquiryStatus {
+  NEW
+  IN_PROGRESS
+  DONE
+  ARCHIVED
+}
+
+model Inquiry {
+  id               String        @id @default(cuid())
+  type             InquiryType
+  name             String
+  company          String?
+  email            String?
+  phone            String?
+  message          String?
+  payload          Json?
+  consentPrivacy   Boolean       @default(false)
+  consentMarketing Boolean       @default(false)
+  status           InquiryStatus @default(NEW)
+  memo             String?
+  createdAt        DateTime      @default(now())
+}
+
+enum Role {
+  SUPER_ADMIN
+  CURATOR
+  FINANCE
+  BREWERY_ADMIN
+}
+
+model User {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  name         String
+  passwordHash String
+  role         Role
+  breweryId    String?
+  brewery      Brewery?  @relation(fields: [breweryId], references: [id])
+  active       Boolean   @default(true)
+  lastLoginAt  DateTime?
+  createdAt    DateTime  @default(now())
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String?
+  userEmail String?
+  action    String
+  entity    String
+  entityId  String?
+  changes   Json?
+  createdAt DateTime @default(now())
+
+  @@index([entity, entityId])
+}
+
+// ─── 3단계: 주문 · 결제 · 정산 (모델만 정의, 기능 비활성) ───────────
+
+enum OrderStatus {
+  PENDING
+  PAID
+  PREPARING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+  REFUNDED
+}
+
+model Order {
+  id                String        @id @default(cuid())
+  orderNumber       String        @unique
+  customerRef       String        // 고객 식별자 (최소 정보)
+  ageVerificationId String?
+  totalAmount       Int
+  isTest            Boolean       @default(true)
+  createdAt         DateTime      @default(now())
+  sellerOrders      SellerOrder[]
+  payments          Payment[]
+}
+
+// 주문은 판매자(양조장)별로 분할 — 판매·배송·정산 책임 구분
+model SellerOrder {
+  id         String      @id @default(cuid())
+  orderId    String
+  order      Order       @relation(fields: [orderId], references: [id])
+  breweryId  String
+  brewery    Brewery     @relation(fields: [breweryId], references: [id])
+  status     OrderStatus @default(PENDING)
+  subtotal   Int
+  commission Int
+  items      OrderItem[]
+  shipments  Shipment[]
+}
+
+model OrderItem {
+  id            String      @id @default(cuid())
+  sellerOrderId String
+  sellerOrder   SellerOrder @relation(fields: [sellerOrderId], references: [id])
+  productId     String
+  product       Product     @relation(fields: [productId], references: [id])
+  quantity      Int
+  unitPrice     Int
+  giftWrap      Boolean     @default(false)
+}
+
+model Payment {
+  id          String   @id @default(cuid())
+  orderId     String
+  order       Order    @relation(fields: [orderId], references: [id])
+  provider    String   // "mock" 외 실제 PG는 LIVE에서만
+  amount      Int
+  status      String
+  externalRef String?
+  createdAt   DateTime @default(now())
+}
+
+model Shipment {
+  id             String      @id @default(cuid())
+  sellerOrderId  String
+  sellerOrder    SellerOrder @relation(fields: [sellerOrderId], references: [id])
+  carrier        String?
+  trackingNumber String?
+  shippedAt      DateTime?
+  deliveredAt    DateTime?
+  damageReported Boolean     @default(false)
+}
+
+model Settlement {
+  id          String   @id @default(cuid())
+  breweryId   String
+  brewery     Brewery  @relation(fields: [breweryId], references: [id])
+  periodStart DateTime
+  periodEnd   DateTime
+  grossAmount Int
+  commission  Int
+  pgCost      Int
+  payout      Int
+  status      String   @default("DRAFT")
+}
+
+// 성인 인증 결과 — 최소 정보만 저장 (CI/DI 원문 미저장)
+model AgeVerification {
+  id          String   @id @default(cuid())
+  provider    String
+  externalTx  String
+  isAdult     Boolean
+  verifiedAt  DateTime @default(now())
+  expiresAt   DateTime
+}

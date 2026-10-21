@@ -1,0 +1,54 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --ivory: #f7f4ee;
+  --charcoal: #202020;
+  --gold: #b69a68;
+  --burgundy: #4c202b;
+  --beige: #ece5d8;
+}
+
+html { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+
+body {
+  background: var(--ivory);
+  color: var(--charcoal);
+  -webkit-font-smoothing: antialiased;
+  word-break: keep-all;
+}
+
+@layer components {
+  .container-site { @apply mx-auto w-full max-w-site px-5 md:px-10 lg:px-16; }
+  .eyebrow { @apply font-serif text-[11px] uppercase tracking-luxe text-gold-deep md:text-xs; }
+  .h-display { @apply font-kserif text-3xl font-light leading-snug tracking-tight md:text-5xl; }
+  .h-section { @apply font-kserif text-2xl font-light leading-snug md:text-4xl; }
+  .btn-primary { @apply inline-flex items-center justify-center gap-2 border border-charcoal bg-charcoal px-7 py-3.5 text-sm tracking-wider text-ivory transition hover:bg-burgundy hover:border-burgundy; }
+  .btn-ghost { @apply inline-flex items-center justify-center gap-2 border border-charcoal/30 px-7 py-3.5 text-sm tracking-wider transition hover:border-charcoal; }
+  .link-underline { @apply relative inline-block after:absolute after:-bottom-0.5 after:left-0 after:h-px after:w-full after:origin-left after:scale-x-0 after:bg-current after:transition-transform hover:after:scale-x-100; }
+  .chip { @apply inline-flex items-center border border-charcoal/15 px-3 py-1.5 text-xs transition hover:border-charcoal/50; }
+  .chip-active { @apply border-charcoal bg-charcoal text-ivory; }
+
+  /* 관리자 */
+  .adm-card { @apply rounded-md border border-line bg-white p-5; }
+  .adm-input { @apply w-full rounded border border-line bg-white px-3 py-2 text-sm outline-none focus:border-charcoal; }
+  .adm-label { @apply mb-1 block text-xs font-medium text-charcoal/70; }
+  .adm-btn { @apply inline-flex items-center justify-center rounded bg-charcoal px-4 py-2 text-sm text-white transition hover:bg-burgundy disabled:cursor-not-allowed disabled:opacity-40; }
+  .adm-btn-ghost { @apply inline-flex items-center justify-center rounded border border-line bg-white px-4 py-2 text-sm transition hover:border-charcoal; }
+  .adm-table { @apply w-full text-left text-sm; }
+  .adm-table th { @apply border-b border-line px-3 py-2 text-xs font-medium text-charcoal/60 whitespace-nowrap; }
+  .adm-table td { @apply border-b border-line/70 px-3 py-2.5 align-middle; }
+}
+
+.js .reveal { opacity: 0; transform: translateY(24px); transition: opacity 0.9s ease, transform 0.9s ease; }
+.js .reveal.is-visible { opacity: 1; transform: none; }
+@media (prefers-reduced-motion: reduce) { .js .reveal { opacity: 1; transform: none; transition: none; } }
+
+.hero-light {
+  background:
+    radial-gradient(ellipse 40% 55% at 50% 38%, rgba(255, 244, 222, 0.95) 0%, rgba(247, 244, 238, 0) 70%),
+    radial-gradient(ellipse 70% 40% at 50% 100%, rgba(76, 32, 43, 0.10) 0%, rgba(247, 244, 238, 0) 70%),
+    linear-gradient(180deg, #efe9de 0%, #f7f4ee 60%, #ece5d8 100%);
+}
