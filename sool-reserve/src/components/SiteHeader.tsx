@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 const NAV = [
   { href: "/collection", label: "컬렉션" },
@@ -15,11 +15,12 @@ const NAV = [
 ];
 
 export default function SiteHeader({ brandName }: { brandName: string }) {
-  const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const menu = useRef<HTMLDetailsElement>(null);
   const pathname = usePathname();
 
-  useEffect(() => setOpen(false), [pathname]);
+  // 모바일 메뉴는 <details>로 구현 — JS 없이도 열리고, 페이지 이동 시 닫힘
+  useEffect(() => menu.current?.removeAttribute("open"), [pathname]);
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 24);
     onScroll();
@@ -28,7 +29,7 @@ export default function SiteHeader({ brandName }: { brandName: string }) {
   }, []);
 
   return (
-    <header className={`sticky top-0 z-40 transition-colors duration-500 ${scrolled || open ? "border-b border-line bg-ivory/95 backdrop-blur" : "bg-transparent"}`}>
+    <header className={`sticky top-0 z-40 transition-colors duration-500 bg-ivory/90 backdrop-blur ${scrolled ? "border-b border-line" : "border-b border-transparent"}`}>
       <div className="container-site flex h-16 items-center justify-between md:h-20">
         <Link href="/" className="flex flex-col leading-none" aria-label={`${brandName} 홈`}>
           <span className="font-serif text-lg tracking-[0.32em] md:text-xl">{brandName}</span>
@@ -45,34 +46,29 @@ export default function SiteHeader({ brandName }: { brandName: string }) {
             </Link>
           ))}
         </nav>
-        <button
-          type="button"
-          className="flex h-10 w-10 flex-col items-center justify-center gap-1.5 lg:hidden"
-          onClick={() => setOpen((v) => !v)}
-          aria-expanded={open}
-          aria-label="메뉴 열기"
-        >
-          <span className={`h-px w-6 bg-charcoal transition ${open ? "translate-y-[3.5px] rotate-45" : ""}`} />
-          <span className={`h-px w-6 bg-charcoal transition ${open ? "-translate-y-[3.5px] -rotate-45" : ""}`} />
-        </button>
+        <details ref={menu} className="group lg:hidden [&_summary::-webkit-details-marker]:hidden">
+          <summary className="flex h-10 w-10 cursor-pointer list-none flex-col items-center justify-center gap-1.5" aria-label="메뉴">
+            <span className="h-px w-6 bg-charcoal transition group-open:translate-y-[3.5px] group-open:rotate-45" />
+            <span className="h-px w-6 bg-charcoal transition group-open:-translate-y-[3.5px] group-open:-rotate-45" />
+          </summary>
+          <nav className="absolute inset-x-0 top-full border-y border-line bg-ivory px-5 pb-8 pt-4" aria-label="모바일 메뉴">
+            <ul className="space-y-1">
+              {NAV.map((n) => (
+                <li key={n.href}>
+                  <Link href={n.href} className="block py-3 font-kserif text-lg">
+                    {n.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+            <div className="mt-6 flex gap-5 text-xs text-charcoal/60">
+              <Link href="/magazine">매거진</Link>
+              <Link href="/partnership">입점 문의</Link>
+              <Link href="/support">고객센터</Link>
+            </div>
+          </nav>
+        </details>
       </div>
-      {open && (
-        <nav className="container-site border-t border-line pb-8 pt-4 lg:hidden" aria-label="모바일 메뉴">
-          <ul className="space-y-1">
-            {NAV.map((n) => (
-              <li key={n.href}>
-                <Link href={n.href} className="block py-3 font-kserif text-lg">
-                  {n.label}
-                </Link>
-              </li>
-            ))}
-          </ul>
-          <div className="mt-6 flex gap-5 text-xs text-charcoal/60">
-            <Link href="/partnership">입점 문의</Link>
-            <Link href="/support">고객센터</Link>
-          </div>
-        </nav>
-      )}
     </header>
   );
 }

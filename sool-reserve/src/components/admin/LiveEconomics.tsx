@@ -4,9 +4,17 @@ import { calcEconomics, resolveCommissionRate } from "@/lib/economics";
 import { pct, won } from "@/lib/format";
 
 // 폼 입력값으로 수익 계산을 실시간 미리보기 (서버와 동일한 calcEconomics 사용)
-export default function LiveEconomics({ systemRate, breweryRates }: { systemRate: number; breweryRates: Record<string, number | null> }) {
+export default function LiveEconomics({
+  systemRate,
+  breweryRates,
+  initial = {},
+}: {
+  systemRate: number;
+  breweryRates: Record<string, number | null>;
+  initial?: Record<string, string>; // 서버 렌더링 시 첫 화면 값 (폼 기본값과 동일)
+}) {
   const ref = useRef<HTMLDivElement>(null);
-  const [vals, setVals] = useState<Record<string, string>>({});
+  const [vals, setVals] = useState<Record<string, string>>(initial);
 
   useEffect(() => {
     const form = ref.current?.closest("form");

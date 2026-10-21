@@ -253,7 +253,22 @@ export default function ProductForm({
           <F label="매입가(매입형 전용)" name="wholesaleCost" type="number" defaultValue={p?.wholesaleCost} />
           <F label="예상 월 판매량(병)" name="expectedMonthlyUnits" type="number" defaultValue={p?.expectedMonthlyUnits ?? 0} hint="대시보드 추정치에 사용" />
           {systemRate !== undefined && (
-            <LiveEconomics systemRate={systemRate} breweryRates={Object.fromEntries((breweries ?? []).map((b) => [b.id, b.defaultCommissionRate]))} />
+            <LiveEconomics
+              systemRate={systemRate}
+              breweryRates={Object.fromEntries((breweries ?? []).map((b) => [b.id, b.defaultCommissionRate]))}
+              initial={{
+                breweryId: p?.breweryId ?? breweries?.[0]?.id ?? "",
+                price: String(p?.price ?? ""),
+                vatBasis: p?.vatBasis ?? "INCLUSIVE",
+                commissionRate: p?.commissionRate === null || p?.commissionRate === undefined ? "" : String(p.commissionRate),
+                pgRate: String(p?.pgRate ?? 3.3),
+                pgBearer: p?.pgBearer ?? "PLATFORM",
+                platformShippingCost: String(p?.platformShippingCost ?? 0),
+                platformPromoCost: String(p?.platformPromoCost ?? 0),
+                otherVariableCost: String(p?.otherVariableCost ?? 0),
+                expectedMonthlyUnits: String(p?.expectedMonthlyUnits ?? 0),
+              }}
+            />
           )}
         </Section>
       )}
