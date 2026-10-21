@@ -81,7 +81,7 @@ function vHome() {
   return `<section class="hero-light relative -mt-16 overflow-hidden md:-mt-20"><div class="container-site grid items-center gap-6 pb-16 pt-28 md:grid-cols-2 md:pt-28" style="min-height:min(100svh,880px)">
     <div class="order-2 md:order-1"><p class="eyebrow">The Reserve of Korean Sool</p><h1 class="h-display mt-6 text-[2.2rem] md:text-6xl">${e(s.slogan)}</h1><p class="mt-6 max-w-md text-[15px] leading-relaxed text-charcoal/65 md:text-base">${e(s.subCopy)}</p>
     <div class="mt-10 flex flex-wrap gap-3"><a href="#collection" class="btn-primary">컬렉션 살펴보기</a><a href="#story" class="btn-ghost">브랜드 스토리</a></div></div>
-    <div class="relative order-1 flex justify-center md:order-2"><div class="absolute top-1/2 h-[70%] w-[70%] -translate-y-1/2 rounded-full bg-[radial-gradient(circle,rgba(182,154,104,0.28)_0%,rgba(247,244,238,0)_65%)]"></div><div class="relative h-[46vh] drop-shadow-[0_30px_40px_rgba(32,32,32,0.18)] md:h-[64vh] [&_svg]:h-full [&_svg]:w-auto">${ART.bottle_YAKJU}</div></div></div></section>
+    <div class="relative order-1 flex justify-center md:order-2"><div class="absolute top-1/2 h-[70%] w-[70%] -translate-y-1/2 rounded-full bg-[radial-gradient(circle,rgba(182,154,104,0.28)_0%,rgba(247,244,238,0)_65%)]"></div>${s.heroImageUrl ? `<img src="${e(s.heroImageUrl)}" alt="${e(s.heroImageAlt || "SOOL RESERVE 대표 이미지")}" class="relative h-[46vh] w-full max-w-[520px] object-cover shadow-[0_30px_60px_rgba(32,32,32,0.18)] md:h-[68vh]">` : `<div class="relative h-[46vh] drop-shadow-[0_30px_40px_rgba(32,32,32,0.18)] md:h-[64vh] [&_svg]:h-full [&_svg]:w-auto">${ART.bottle_YAKJU}</div>`}</div></div></section>
   <section class="container-site py-24 md:py-32">${heading("The Collection", "대한민국의 명주를 만나다.", "양조장의 신뢰, 술의 완성도, 이야기와 희소성. 열 가지 기준으로 엄선한 전통주입니다.", `<a href="#collection" class="link-u text-sm">전체 컬렉션 보기 →</a>`)}${grid(coll)}</section>
   ${showPrices ? `<section class="border-y border-line bg-beige/40 py-24 md:py-28"><div class="container-site"><div class="mb-14 text-center"><p class="eyebrow">Price Collection</p><h2 class="h-section mt-3">가치에 맞는 한 병을 고르다.</h2><p class="mt-4 text-sm text-charcoal/60">가격대별로 엄선한 컬렉션. 표시 가격은 참고 소비자가입니다.</p></div>
     <div class="grid grid-cols-2 gap-px border border-line bg-line md:grid-cols-5">${(s.priceTiers || []).map((t) => `<a href="#collection" data-act="tier" data-v="${t}" class="flex flex-col items-center gap-2 bg-ivory px-4 py-10 text-center transition hover:bg-white"><span class="font-serif text-2xl md:text-3xl">${t / 10000}만 원</span><span class="text-xs tracking-wider text-charcoal/50">이상 · ${all.filter((p) => p.price >= t && p.eligibility !== "INELIGIBLE").length}종</span></a>`).join("")}
@@ -280,4 +280,13 @@ function vLegal(type) {
 }
 function vNotFound() {
   return `<div class="container-site flex min-h-[50vh] flex-col items-center justify-center py-24 text-center"><h1 class="font-kserif text-3xl font-light">페이지를 찾을 수 없습니다.</h1><a href="#" class="btn-ghost mt-10">홈으로</a></div>`;
+}
+
+// 19세 안내 (고지 목적 — 실제 구매 자격 검증은 판매 개시 시 본인확인 기반 성인 인증으로 별도 수행)
+function ageGate() {
+  let seen = false;
+  try { seen = !!localStorage.getItem("sr_age_v1"); } catch {}
+  if (seen || S.ageOk) return "";
+  return `<div class="fixed inset-0 z-50 flex items-center justify-center bg-charcoal/60 p-5 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="age-t"><div class="w-full max-w-md bg-ivory px-8 py-10 text-center shadow-2xl"><p class="font-serif text-sm tracking-[0.32em]">SOOL RESERVE</p><div class="mx-auto my-6 h-px w-10 bg-gold"></div>
+  ${S.ageNo ? `<h2 id="age-t" class="font-kserif text-xl">이용할 수 없습니다</h2><p class="mt-4 text-sm leading-relaxed text-charcoal/70">본 사이트는 주류 정보를 다루고 있어 만 19세 이상만 이용할 수 있습니다.</p>` : `<h2 id="age-t" class="font-kserif text-xl">만 19세 이상이신가요?</h2><p class="mt-4 text-sm leading-relaxed text-charcoal/70">본 사이트는 전통주 정보를 소개합니다. 19세 미만 청소년의 주류 구매는 법으로 금지되어 있으며, 향후 실제 구매 시에는 본인 확인 기반 성인 인증을 별도로 진행합니다.</p><div class="mt-8 flex flex-col gap-2 sm:flex-row sm:justify-center"><button data-act="age-yes" class="btn-primary">네, 만 19세 이상입니다</button><button data-act="age-no" class="btn-ghost">아니오</button></div>`}</div></div>`;
 }

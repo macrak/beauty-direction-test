@@ -33,7 +33,7 @@ const DEFAULT_SETTINGS = {
   salesMode: "SHOWCASE", showReferencePrice: true, showDemoData: true, defaultCommissionRate: 15, minListingPrice: 100000,
   priceTiers: [100000, 200000, 300000, 500000],
   curationWeights: { scoreEligibility: 1.5, scoreReputation: 1, scoreStory: 1, scoreQuality: 1.5, scoreRarity: 1, scoreDesign: 0.8, scoreGift: 1.2, scoreProfit: 1.2, scoreSupply: 1, scoreLogistics: 0.8 },
-  pgContractConfirmed: false, settlementStructureConfirmed: false,
+  pgContractConfirmed: false, settlementStructureConfirmed: false, heroImageUrl: null, heroImageAlt: "",
   business: { companyName: "(운영사 등록 전)", representative: "-", businessNumber: "-", mailOrderNumber: "-", address: "-", email: "hello@soolreserve.example", phone: "-" },
   featured: { MAIN: [], GIFT: [], PROFIT: [], LIMITED: [], SEASONAL: [] },
 };
@@ -41,7 +41,7 @@ const DEFAULT_SETTINGS = {
 // ─── 상태 ───────────────────────────────────────────────
 const S = {
   db: null, user: null, uid: null, isAdmin: false, status: "connecting", // connecting | ready | offline
-  settings: DEFAULT_SETTINGS, products: {}, breweries: {}, articles: {}, notices: {}, inquiries: [],
+  settings: DEFAULT_SETTINGS, products: {}, breweries: {}, articles: {}, notices: {}, inquiries: [], audit: [], assets: null, delArm: null, ageOk: false, ageNo: false,
   loaded: { settings: false, products: false, breweries: false, articles: false, notices: false },
   f: { q: "", type: "", taste: [], occasion: "", min: "", sort: "" },
   quiz: { step: 0, tastes: [], types: [], food: "", purpose: "", budget: null, results: null },

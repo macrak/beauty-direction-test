@@ -14,7 +14,8 @@ function readForm(form) {
       const n = Number(raw);
       if (!Number.isFinite(n) || (t.startsWith("int") && !Number.isInteger(n))) throw new FormErr(`${el.closest("label")?.querySelector(".adm-label")?.textContent || k}: 숫자를 확인해 주세요.`);
       out[k] = n;
-    } else if (t === "date") out[k] = raw ? new Date(`${raw}T00:00:00+09:00`).toISOString() : null;
+    } else if (t === "json") { try { out[k] = JSON.parse(raw || "null"); } catch { out[k] = null; } }
+    else if (t === "date") out[k] = raw ? new Date(`${raw}T00:00:00+09:00`).toISOString() : null;
     else if (t === "tiers") out[k] = raw.split(",").map((x) => Number(x.trim().replace(/,/g, ""))).filter((x) => x > 0).sort((a, b) => a - b);
     else out[k] = raw === "" ? null : raw;
   }
@@ -67,6 +68,8 @@ async function quickSave(form) {
 async function saveBrewery(form) {
   const id = form.dataset.id, v = readForm(form);
   if (!v.name || !v.region) throw new FormErr("양조장 이름과 지역을 입력해 주세요.");
+  v.gallery = [0, 1, 2, 3, 4, 5].map((i) => ({ url: v[`gal_${i}_url`], caption: v[`gal_${i}_caption`] })).filter((g) => g.url).map((g) => (g.caption ? g : { url: g.url }));
+  for (let i = 0; i < 6; i++) { delete v[`gal_${i}_url`]; delete v[`gal_${i}_caption`]; }
   const compliance = {};
   for (const k of Object.keys(v)) if (k.startsWith("c_")) { compliance[k.slice(2)] = v[k]; delete v[k]; }
   if (v.salesEnabled && compliance.status !== "APPROVED") throw new FormErr("판매 서류가 승인(APPROVED)된 양조장만 판매 활성화할 수 있습니다.");
@@ -183,6 +186,7 @@ function adminView(r) {
     case "inquiries": return aInquiries();
     case "legal": return aLegal();
     case "settings": return aSettings();
+    case "audit": return aAudit();
     default: return aDashboard();
   }
 }
@@ -193,7 +197,7 @@ function render() {
     if (!S.isAdmin) { app.innerHTML = statusBar() + header(r) + `<div class="container-site py-24 text-center"><h1 class="font-kserif text-2xl">관리자 전용 화면입니다.</h1><p class="mt-4 text-sm text-charcoal/60">${S.status === "connecting" ? "권한을 확인하는 중입니다…" : "이 아티팩트의 소유자 또는 편집자(Editor)만 관리자 화면을 사용할 수 있습니다."}</p><a href="#" class="btn-ghost mt-8">홈으로</a></div>`; return; }
     app.innerHTML = adminShell(r, adminView(r));
   } else {
-    app.innerHTML = statusBar() + header(r) + `<main>${view(r)}</main>` + footer();
+    app.innerHTML = statusBar() + header(r) + `<main>${view(r)}</main>` + footer() + ageGate();
   }
   document.title = `${S.settings.brandName}${r.name === "admin" ? " · 관리자" : ""}`;
 }
@@ -241,12 +245,27 @@ document.addEventListener("click", async (ev) => {
     case "slot-add": { const sel = document.getElementById(`slot-add-${t.dataset.slot}`); if (!sel.value) return; const fe = { ...S.settings.featured }; fe[t.dataset.slot] = [...(fe[t.dataset.slot] || []), sel.value]; await saveSettingsPatch({ featured: fe }); return toast("추가했습니다."); }
     case "slot-del": { const fe = { ...S.settings.featured }; fe[t.dataset.slot] = fe[t.dataset.slot].filter((_, i) => i !== Number(t.dataset.i)); await saveSettingsPatch({ featured: fe }); return toast("삭제했습니다."); }
     case "slot-move": { const fe = { ...S.settings.featured }, arr = [...fe[t.dataset.slot]], i = Number(t.dataset.i), j = i + Number(t.dataset.d); if (j < 0 || j >= arr.length) return; [arr[i], arr[j]] = [arr[j], arr[i]]; fe[t.dataset.slot] = arr; await saveSettingsPatch({ featured: fe }); return; }
+    case "age-yes": S.ageOk = true; try { localStorage.setItem("sr_age_v1", new Date().toISOString()); } catch {} return rerender();
+    case "age-no": S.ageNo = true; return rerender();
+    case "img-clear": { const inp = document.querySelector(`[data-img-input="${v}"]`); if (inp) { inp.value = ""; setPreview(v, ""); S.dirty = true; } return; }
+    case "gal-del": { const h = document.querySelector('[name="gallery|json"]'); const arr = JSON.parse(h.value || "[]"); arr.splice(Number(v), 1); h.value = JSON.stringify(arr); S.dirty = true; return renderGallery(arr); }
+    case "del": {
+      const key = `${t.dataset.kind}:${v}`;
+      if (S.delArm !== key) { S.delArm = key; t.textContent = "한 번 더 누르면 삭제"; setTimeout(() => { if (S.delArm === key) { S.delArm = null; t.textContent = "삭제"; } }, 4000); return; }
+      S.delArm = null;
+      const coll = t.dataset.kind === "product" ? "products" : "articles";
+      await S.db.doc(`cat/v1/${coll}/${v}`).delete();
+      if (coll === "products") { const fe = { ...S.settings.featured }; let changed = false; for (const k of Object.keys(fe)) { if ((fe[k] || []).includes(v)) { fe[k] = fe[k].filter((x) => x !== v); changed = true; } } if (changed) await saveSettingsPatch({ featured: fe }); }
+      await audit("DELETE", t.dataset.kind, v);
+      S.dirty = false; toast("삭제했습니다."); location.hash = coll === "products" ? "admin.products" : "admin.magazine"; return;
+    }
     case "notice-del": { const n = S.notices[v]; if (!n || new Date(n.effectiveFrom) <= new Date()) return; await S.db.doc(`cat/v1/notices/${v}`).delete(); await audit("DELETE", "notice", v); return toast("삭제했습니다."); }
   }
 });
 
 document.addEventListener("input", (ev) => {
   const el = ev.target;
+  if (el.dataset.imgInput) setPreview(el.dataset.imgInput, el.value);
   if (el.dataset.f) { S.f[el.dataset.f] = el.value; const pos = el.selectionStart; render(); const again = document.getElementById(el.id); if (again && el.tagName === "INPUT") { again.focus(); try { again.setSelectionRange(pos, pos); } catch {} } return; }
   if (el.dataset.sel) { S.sel[el.dataset.sel] = el.type === "checkbox" ? el.checked : el.value; const id = el.dataset.sel; render(); const again = document.querySelector(`[data-sel="${id}"]`); if (again && el.type !== "checkbox") again.focus(); return; }
   const form = el.closest("form[data-form]");
@@ -255,8 +274,39 @@ document.addEventListener("input", (ev) => {
     if (form.dataset.form === "product") { try { const v = readForm(form); const box = document.getElementById("econ-preview"); if (box) box.innerHTML = econPreview({ ...v, commissionRate: v.commissionRate ?? "" }); } catch {} }
   }
 });
+// ─── 사진 업로드 ─────────────────────────────────────────
+function setPreview(name, url) { const box = document.querySelector(`[data-img-preview="${name}"]`); if (box) box.innerHTML = url ? `<img src="${e(url)}" alt="" class="h-full w-full object-cover">` : "없음"; }
+function renderGallery(arr) {
+  const box = document.querySelector("[data-gallery]"); if (!box) return;
+  const add = box.querySelector("label");
+  box.innerHTML = arr.map((u, i) => `<div class="w-24 text-center"><img src="${e(u)}" alt="" class="aspect-square w-24 rounded border border-line object-cover"><button type="button" data-act="gal-del" data-v="${i}" class="mt-1 text-[11px] text-[#9B1C1C] underline">삭제</button></div>`).join("");
+  if (add) box.appendChild(add);
+}
+const UPLOAD_ERR = { too_large: "20MB 이하 사진만 올릴 수 있습니다.", unsupported_type: "JPG·PNG·WEBP 사진만 올릴 수 있습니다.", quota_or_state: "저장 공간이 부족합니다.", rate_limited: "잠시 후 다시 시도해 주세요." };
+async function uploadFile(file) {
+  if (!S.assets) throw new FormErr("업로드 권한이 없습니다.");
+  if (!/^image\/(jpeg|png|webp)$/.test(file.type)) throw new FormErr("JPG·PNG·WEBP 사진만 올릴 수 있습니다.");
+  try { const r = await S.assets.upload(file); return `/_blob/${r.id}`; }
+  catch (err) { throw new FormErr(UPLOAD_ERR[err?.code] || "업로드하지 못했습니다."); }
+}
 document.addEventListener("change", async (ev) => {
   const el = ev.target;
+  if (el.dataset.upload) {
+    const f = el.files?.[0]; if (!f) return;
+    const name = el.dataset.upload; const box = document.querySelector(`[data-img-preview="${name}"]`); if (box) box.textContent = "업로드 중…";
+    try { const url = await uploadFile(f); const inp = document.querySelector(`[data-img-input="${name}"]`); inp.value = url; setPreview(name, url); S.dirty = true; toast("사진을 올렸습니다. 저장을 눌러 반영하세요."); }
+    catch (err) { setPreview(name, document.querySelector(`[data-img-input="${name}"]`)?.value); toast(err.message); }
+    el.value = ""; return;
+  }
+  if (el.hasAttribute("data-gallery-upload")) {
+    const h = document.querySelector('[name="gallery|json"]'); const arr = JSON.parse(h.value || "[]");
+    const files = [...el.files].slice(0, Math.max(0, 8 - arr.length));
+    if (!files.length) { toast("추가 사진은 최대 8장입니다."); el.value = ""; return; }
+    toast("업로드 중…");
+    try { for (const f of files) arr.push(await uploadFile(f)); h.value = JSON.stringify(arr); renderGallery(arr); S.dirty = true; toast("사진을 올렸습니다. 저장을 눌러 반영하세요."); }
+    catch (err) { h.value = JSON.stringify(arr); renderGallery(arr); toast(err.message); }
+    el.value = ""; return;
+  }
   if (el.dataset.f && el.tagName === "SELECT") { S.f[el.dataset.f] = el.value; return render(); }
   if (el.dataset.inqStatus) {
     const [docId, idx] = el.dataset.inqStatus.split("|");
@@ -296,7 +346,8 @@ async function init() {
   render();
   const c = window.claude;
   if (!c || typeof c.use !== "function") { S.status = "offline"; return render(); }
-  const [db, user] = await Promise.all([c.use("db"), c.use("user")]);
+  const [db, user, assets] = await Promise.all([c.use("db"), c.use("user"), c.use("assets")]);
+  S.assets = assets;
   if (!db) { S.status = "offline"; return render(); }
   S.db = db; S.user = user;
   if (user) { S.isAdmin = await user.canEdit(); S.uid = await user.id(); }
@@ -304,6 +355,7 @@ async function init() {
   db.doc("cat/v1").onSnapshot((s) => { const d = s.exists ? s.data() : {}; S.settings = { ...DEFAULT_SETTINGS, ...d, business: { ...DEFAULT_SETTINGS.business, ...(d.business || {}) }, featured: { ...DEFAULT_SETTINGS.featured, ...(d.featured || {}) } }; S.loaded.settings = true; ready(); }, fail);
   const coll = (name) => db.collection(`cat/v1/${name}`).onSnapshot((qs) => { S[name] = Object.fromEntries(qs.docs.map((d) => [d.id, { ...d.data(), id: d.id }])); S.loaded[name] = true; ready(); }, fail);
   ["products", "breweries", "articles", "notices"].forEach(coll);
+  if (S.isAdmin) db.collection("cat/v1/audit").orderBy("at", "desc").limit(300).onSnapshot((qs) => { S.audit = qs.docs.map((d) => ({ ...d.data(), id2: d.id })); if (route().arg === "audit") onData(); }, fail);
   if (S.isAdmin) db.collection("inq").onSnapshot((qs) => { S.inquiries = qs.docs.map((d) => ({ ...d.data(), id: d.id })); onData(); }, fail);
 }
 function ready() { if (Object.values(S.loaded).every(Boolean)) S.status = "ready"; onData(); }
