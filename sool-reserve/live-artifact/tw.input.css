@@ -1,0 +1,25 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+  @layer components {
+    .container-site { @apply mx-auto w-full max-w-site px-5 md:px-10 lg:px-16; }
+    .eyebrow { @apply font-serif text-[11px] uppercase tracking-luxe text-gold-deep md:text-xs; }
+    .h-display { @apply font-kserif text-3xl font-light leading-snug tracking-tight md:text-5xl; }
+    .h-section { @apply font-kserif text-2xl font-light leading-snug md:text-4xl; }
+    .btn-primary { @apply inline-flex items-center justify-center gap-2 border border-charcoal bg-charcoal px-7 py-3.5 text-sm tracking-wider text-ivory transition hover:border-burgundy hover:bg-burgundy disabled:opacity-50; }
+    .btn-ghost { @apply inline-flex items-center justify-center gap-2 border border-charcoal/30 px-7 py-3.5 text-sm tracking-wider transition hover:border-charcoal disabled:opacity-40; }
+    .link-u { @apply underline-offset-4 hover:underline; }
+    .chip { @apply inline-flex cursor-pointer items-center border border-charcoal/15 px-3 py-1.5 text-xs transition hover:border-charcoal/50; }
+    .chip-on { @apply border-charcoal bg-charcoal text-ivory; }
+    .finput { @apply w-full border-b border-charcoal/25 bg-transparent py-3 text-[15px] outline-none transition placeholder:text-charcoal/30 focus:border-charcoal; }
+    .adm-card { @apply rounded-md border border-line bg-white p-5; }
+    .adm-input { @apply w-full rounded border border-line bg-white px-3 py-2 text-sm outline-none focus:border-charcoal; }
+    .adm-label { @apply mb-1 block text-xs font-medium text-charcoal/70; }
+    .adm-btn { @apply inline-flex items-center justify-center rounded bg-charcoal px-4 py-2 text-sm text-white transition hover:bg-burgundy disabled:cursor-not-allowed disabled:opacity-40; }
+    .adm-btn-ghost { @apply inline-flex items-center justify-center rounded border border-line bg-white px-4 py-2 text-sm transition hover:border-charcoal; }
+    .adm-table { @apply w-full text-left text-sm; }
+    .adm-table th { @apply whitespace-nowrap border-b border-line px-3 py-2 text-xs font-medium text-charcoal/60; }
+    .adm-table td { @apply border-b border-line/70 px-3 py-2.5 align-middle; }
+    .pill { @apply inline-flex items-center whitespace-nowrap rounded px-1.5 py-0.5 text-[11px] font-medium; }
+  }
