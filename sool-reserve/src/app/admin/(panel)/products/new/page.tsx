@@ -7,8 +7,9 @@ import { getSettings } from "@/lib/settings";
 
 export default async function NewProduct() {
   const user = await requireStaff(["SUPER_ADMIN", "CURATOR"]);
-  const [breweries, s] = await Promise.all([
+  const [breweries, suppliers, s] = await Promise.all([
     prisma.brewery.findMany({ orderBy: { name: "asc" }, select: { id: true, name: true, defaultCommissionRate: true } }),
+    prisma.supplier.findMany({ where: { active: true }, orderBy: { name: "asc" }, select: { id: true, name: true, licenseVerified: true } }),
     getSettings(),
   ]);
   return (
@@ -22,6 +23,7 @@ export default async function NewProduct() {
           scopes={{ content: true, curation: true, economics: user.role === "SUPER_ADMIN" }}
           action={saveProduct}
           systemRate={s.defaultCommissionRate}
+          suppliers={suppliers}
         />
       )}
     </>

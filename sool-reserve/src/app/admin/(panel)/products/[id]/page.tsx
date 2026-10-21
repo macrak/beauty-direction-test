@@ -11,9 +11,10 @@ import { dateKo } from "@/lib/format";
 
 export default async function EditProduct({ params, searchParams }: { params: { id: string }; searchParams: { saved?: string } }) {
   const user = await requireStaff();
-  const [p, breweries, s, logs] = await Promise.all([
+  const [p, breweries, suppliers, s, logs] = await Promise.all([
     prisma.product.findUnique({ where: { id: params.id } }),
     prisma.brewery.findMany({ orderBy: { name: "asc" }, select: { id: true, name: true, defaultCommissionRate: true } }),
+    prisma.supplier.findMany({ where: { active: true }, orderBy: { name: "asc" }, select: { id: true, name: true, licenseVerified: true } }),
     getSettings(),
     prisma.auditLog.findMany({ where: { entity: "Product", entityId: params.id }, orderBy: { createdAt: "desc" }, take: 8 }),
   ]);
@@ -46,7 +47,7 @@ export default async function EditProduct({ params, searchParams }: { params: { 
       />
       {searchParams.saved && <p className="mb-4 rounded bg-[#E3EFE5] px-3 py-2 text-sm text-[#22603A]">저장되었습니다. 고객 화면에 반영되었습니다.</p>}
       {!scopes.content && <p className="mb-4 text-sm text-charcoal/60">재무 권한: 수익 구조 항목만 수정할 수 있습니다.</p>}
-      <ProductForm product={p} breweries={breweries} scopes={scopes} action={saveProduct} systemRate={s.defaultCommissionRate} />
+      <ProductForm product={p} breweries={breweries} scopes={scopes} action={saveProduct} systemRate={s.defaultCommissionRate} suppliers={suppliers} />
       {logs.length > 0 && (
         <div className="adm-card mt-4">
           <h2 className="text-sm font-semibold">최근 변경 이력</h2>

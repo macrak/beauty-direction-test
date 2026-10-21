@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { calcEconomics, resolveCommissionRate } from "./economics";
+import { calcEconomics, calcWholesale, productEconomics, resolveCommissionRate } from "./economics";
 
 const base = {
   price: 150000,
@@ -55,5 +55,27 @@ describe("resolveCommissionRate", () => {
     expect(resolveCommissionRate(null, 18, 15)).toBe(18);
     expect(resolveCommissionRate(null, null, 15)).toBe(15);
     expect(resolveCommissionRate(0, 18, 15)).toBe(0);
+  });
+});
+
+describe("calcWholesale (매입형)", () => {
+  const w = { price: 110000, wholesaleCost: 66000, pgRate: 3.3, platformShippingCost: 4000, platformPromoCost: 0, otherVariableCost: 1000 };
+  it("VAT 제외 기준 매출총이익과 공헌이익", () => {
+    const r = calcWholesale(w);
+    expect(r.netSales).toBe(100000);
+    expect(r.netCost).toBe(60000);
+    expect(r.grossMargin).toBe(40000);
+    expect(r.pgCost).toBe(3630);
+    expect(r.contribution).toBe(40000 - 3630 - 4000 - 1000);
+    expect(r.marginOnSales).toBe(31.4);
+    expect(r.markup).toBe(66.7);
+  });
+  it("매입가 미입력은 표시", () => {
+    expect(calcWholesale({ ...w, wholesaleCost: null }).missingCost).toBe(true);
+  });
+  it("productEconomics가 거래 모델에 따라 분기", () => {
+    const base = { ...w, vatBasis: "INCLUSIVE" as const, commissionRate: null, pgBearer: "PLATFORM" as const };
+    expect(productEconomics({ ...base, tradeModel: "WHOLESALE" }, 15).commission).toBe(40000);
+    expect(productEconomics({ ...base, tradeModel: "COMMISSION" }, 15).commission).toBe(16500);
   });
 });

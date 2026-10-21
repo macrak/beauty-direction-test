@@ -26,7 +26,7 @@ export default async function Profitability({ searchParams }: { searchParams: { 
       <div className="adm-card mb-4 text-xs leading-relaxed text-charcoal/65">
         <p>
           <strong>계산식</strong> · 기준금액 = 판매가(VAT 포함) 또는 판매가÷1.1(원 미만 버림) · 수수료 수익 = 기준금액 × 수수료율 · 공헌이익 = 수수료 수익 − 플랫폼 부담 결제비 − 배송비 − 프로모션 − 기타 변동비 ·
-          공헌이익률 = 공헌이익 ÷ 수수료 수익 × 100
+          공헌이익률 = 공헌이익 ÷ 플랫폼 수익 × 100 · <strong>직매입</strong> 플랫폼 수익 = 판매가÷1.1 − 매입가÷1.1 (매출총이익), 결제 수수료는 운영사가 전액 부담
         </p>
         <p className="mt-1">실제 매출·수익 회계처리는 거래 계약 구조와 세무 기준에 따라 별도로 판단합니다.</p>
       </div>
@@ -37,8 +37,8 @@ export default async function Profitability({ searchParams }: { searchParams: { 
               <th>상품</th>
               {th("price", "판매가")}
               <th>기준</th>
-              <th className="text-right">수수료율</th>
-              <th className="text-right">수수료 수익</th>
+              <th className="text-right">수수료율 / 매입가</th>
+              <th className="text-right">플랫폼 수익</th>
               <th className="text-right">결제비(플랫폼)</th>
               <th className="text-right">배송·포장</th>
               <th className="text-right">프로모션</th>
@@ -57,13 +57,13 @@ export default async function Profitability({ searchParams }: { searchParams: { 
                     {r.name}
                   </Link>
                   <div className="text-xs text-charcoal/50">
-                    {r.brewery.name} {r.tradeModel === "WHOLESALE" && <Pill tone="warn">매입형(비활성)</Pill>}
+                    {r.brewery.name} {r.tradeModel === "WHOLESALE" && <Pill tone="brand">직매입</Pill>}
                   </div>
                 </td>
                 <td className="text-right tabular-nums">{won(r.price)}</td>
                 <td className="text-xs">{r.vatBasis === "INCLUSIVE" ? "VAT 포함" : "VAT 제외"}</td>
                 <td className="text-right tabular-nums">
-                  {r.econ.commissionRate}%{r.commissionRate === null && <span className="text-charcoal/40">*</span>}
+                  {r.econ.model === "WHOLESALE" ? <span className="text-xs text-charcoal/55">매입 {r.wholesaleCost ? won(r.wholesaleCost) : "미입력"}</span> : <>{r.econ.commissionRate}%{r.commissionRate === null && <span className="text-charcoal/40">*</span>}</>}
                 </td>
                 <td className="text-right tabular-nums">{won(r.econ.commission)}</td>
                 <td className="text-right tabular-nums">{won(r.econ.platformPgCost)}</td>

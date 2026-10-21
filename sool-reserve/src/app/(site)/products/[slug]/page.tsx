@@ -8,6 +8,10 @@ import TasteRadar from "@/components/TasteRadar";
 import ProductCard from "@/components/ProductCard";
 import Reveal from "@/components/Reveal";
 import { getPublicProduct, getPublicProducts } from "@/lib/catalog";
+import AddToCart from "@/components/AddToCart";
+import { canOrder } from "@/lib/commerce";
+import { commerceSession } from "@/lib/orders";
+import { prisma } from "@/lib/db";
 import { getCurrentNotices } from "@/lib/legal";
 import { ELIGIBILITY_LABEL, LEGAL_CLASS_LABEL, LIQUOR_TYPE_LABEL, TASTE_AXES, TASTE_SOURCE_LABEL } from "@/lib/labels";
 import { dateKo, won } from "@/lib/format";
@@ -45,6 +49,11 @@ export default async function ProductPage({ params }: Params) {
   const r = await getPublicProduct(params.slug);
   if (!r) notFound();
   const { product: p, brewery: b } = r;
+  // 주문 가능 여부는 세션(관리자 여부)·운영 모드·재고로 서버에서 판정
+  const session = await commerceSession();
+  const raw = await prisma.product.findUniqueOrThrow({ where: { id: p.id }, select: { stock: true, status: true, eligibility: true, tradeModel: true, isDemo: true, wholesaleCost: true } });
+  const orderable = canOrder({ mode: session.settings.salesMode, isStaff: session.isStaff, product: raw, brewery: b, operatorLicenseConfirmed: session.settings.operatorLicenseConfirmed });
+  const sellerName = raw.tradeModel === "WHOLESALE" ? `${session.settings.brandName} 직매입` : b.name;
   const notices = await getCurrentNotices(["HEALTH_WARNING", "INTERMEDIARY"]);
   const related = (await getPublicProducts({ breweryId: b.id, NOT: { id: p.id } })).slice(0, 4);
   const pairings = (Array.isArray(p.pairings) ? (p.pairings as unknown as Pairing[]) : []).filter((x) => x?.name);
@@ -114,9 +123,14 @@ export default async function ProductPage({ params }: Params) {
             <Price price={p.price} mode={p.priceMode} eligibility={p.eligibility} size="lg" />
           </div>
 
+          {orderable ? (
+            <AddToCart productId={p.id} stock={raw.stock} testMode={session.settings.salesMode !== "LIVE"} />
+          ) : (
           <div className="mt-8 border border-line bg-white/60 p-5 text-sm leading-relaxed">
             {p.purchasable ? (
               <p>구매 가능 상품입니다.</p>
+            ) : raw.stock <= 0 && session.allowed ? (
+              <p className="font-medium">일시 품절입니다.</p>
             ) : p.eligibility === "INELIGIBLE" ? (
               <p className="text-charcoal/70">이 상품은 관련 법령상 온라인 판매 대상이 아니어서 정보만 소개합니다.</p>
             ) : (
@@ -132,6 +146,7 @@ export default async function ProductPage({ params }: Params) {
               </>
             )}
           </div>
+          )}
           {p.isDemo && <p className="mt-4 text-xs text-charcoal/50">DEMO · 화면 구성을 위한 가상 상품입니다. 가격·맛 평가·제조 정보는 실제와 무관합니다.</p>}
           {p.description && <p className="mt-8 text-[15px] leading-loose text-charcoal/75">{p.description}</p>}
         </div>
@@ -346,7 +361,7 @@ export default async function ProductPage({ params }: Params) {
       <section className="container-site mt-20">
         <div className="space-y-2 border-t border-line pt-6 text-[11px] leading-relaxed text-charcoal/50">
           <p>
-            판매자(제조사): {p.brewery.name}
+            판매자: {sellerName} · 제조사: {p.brewery.name}
             {p.isDemo ? " — 데모 데이터로 실제 사업자 정보가 아닙니다." : ""}
           </p>
           {notices.INTERMEDIARY && <p>{notices.INTERMEDIARY.body}</p>}

@@ -1,4 +1,4 @@
-import type { Brewery, Product } from "@prisma/client";
+import type { Brewery, Product, Supplier } from "@prisma/client";
 import ActionForm from "./ActionForm";
 import LiveEconomics from "./LiveEconomics";
 import { Check, Checks, F, Sel, Section, TA } from "./Field";
@@ -33,7 +33,9 @@ export default function ProductForm({
   scopes,
   action,
   systemRate,
+  suppliers = [],
 }: {
+  suppliers?: Pick<Supplier, "id" | "name" | "licenseVerified">[];
   product?: Product | null;
   breweries?: Pick<Brewery, "id" | "name" | "defaultCommissionRate">[];
   scopes: ProductScopes;
@@ -217,15 +219,22 @@ export default function ProductForm({
       )}
 
       {scopes.economics && (
-        <Section title="수익 구조 (내부 전용 — 고객 미노출)" desc="중개형: 플랫폼 수수료 = 기준금액 × 수수료율. 매입형은 별도 면허 검토 전 비활성.">
+        <Section title="수익 구조 (내부 전용 — 고객 미노출)" desc="중개형: 양조장이 판매자, 플랫폼 수익 = 기준금액 × 수수료율. 매입형: 운영사가 도매상에서 매입해 직접 판매, 수익 = 판매가 − 매입가(VAT 제외 기준) − 비용.">
           <Sel
             label="거래 모델"
             name="tradeModel"
             options={[
-              ["COMMISSION", "중개 (수수료)"],
-              ["WHOLESALE", "매입 (비활성 — 면허 검토 필요)"],
+              ["COMMISSION", "중개 (양조장 판매 · 수수료)"],
+              ["WHOLESALE", "매입 (도매상에서 매입 · 직접 판매)"],
             ]}
             defaultValue={p?.tradeModel ?? "COMMISSION"}
+          />
+          <Sel
+            label="공급처 (매입형)"
+            name="supplierId"
+            options={suppliers.map((x) => [x.id, `${x.name}${x.licenseVerified ? "" : " (면허 미확인)"}`])}
+            empty="선택 안 함"
+            defaultValue={p?.supplierId}
           />
           <Sel
             label="수수료 기준금액"
@@ -236,7 +245,7 @@ export default function ProductForm({
             ]}
             defaultValue={p?.vatBasis ?? "INCLUSIVE"}
           />
-          <F label="수수료율(%)" name="commissionRate" type="number" step="0.1" defaultValue={p?.commissionRate} hint={`비우면 양조장 기본값 → 시스템 기본값(${systemRate}%)`} />
+          <F label="수수료율(%) · 중개형" name="commissionRate" type="number" step="0.1" defaultValue={p?.commissionRate} hint={`비우면 양조장 기본값 → 시스템 기본값(${systemRate}%)`} />
           <F label="결제 수수료율(%)" name="pgRate" type="number" step="0.1" defaultValue={p?.pgRate ?? 3.3} />
           <Sel
             label="결제비 부담"
@@ -250,7 +259,7 @@ export default function ProductForm({
           <F label="플랫폼 부담 포장·배송비(원)" name="platformShippingCost" type="number" defaultValue={p?.platformShippingCost ?? 0} />
           <F label="플랫폼 부담 할인·프로모션(원)" name="platformPromoCost" type="number" defaultValue={p?.platformPromoCost ?? 0} />
           <F label="기타 변동비(원)" name="otherVariableCost" type="number" defaultValue={p?.otherVariableCost ?? 0} />
-          <F label="매입가(매입형 전용)" name="wholesaleCost" type="number" defaultValue={p?.wholesaleCost} />
+          <F label="매입가(VAT 포함) · 매입형" name="wholesaleCost" type="number" step="100" defaultValue={p?.wholesaleCost} hint="입고 처리 시 발주 단가로 자동 갱신" />
           <F label="예상 월 판매량(병)" name="expectedMonthlyUnits" type="number" defaultValue={p?.expectedMonthlyUnits ?? 0} hint="대시보드 추정치에 사용" />
           {systemRate !== undefined && (
             <LiveEconomics
@@ -267,6 +276,8 @@ export default function ProductForm({
                 platformPromoCost: String(p?.platformPromoCost ?? 0),
                 otherVariableCost: String(p?.otherVariableCost ?? 0),
                 expectedMonthlyUnits: String(p?.expectedMonthlyUnits ?? 0),
+                tradeModel: p?.tradeModel ?? "COMMISSION",
+                wholesaleCost: p?.wholesaleCost == null ? "" : String(p.wholesaleCost),
               }}
             />
           )}

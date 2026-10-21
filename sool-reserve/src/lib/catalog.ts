@@ -36,7 +36,7 @@ export interface PublicProduct extends PublicProductBase {
 
 export function toPublicProduct(
   p: Product & { brewery: Brewery },
-  settings: Pick<SiteSettings, "salesMode" | "showReferencePrice">,
+  settings: Pick<SiteSettings, "salesMode" | "showReferencePrice"> & Partial<Pick<SiteSettings, "operatorLicenseConfirmed">>,
 ): PublicProduct {
   const out = {} as Record<string, unknown>;
   for (const k of PUBLIC_PRODUCT_FIELDS) out[k] = p[k];
@@ -45,7 +45,7 @@ export function toPublicProduct(
     ...(out as PublicProductBase),
     price: mode === "HIDDEN" ? null : p.price,
     priceMode: mode,
-    purchasable: canPurchase({ mode: settings.salesMode, product: p, brewery: p.brewery }),
+    purchasable: canPurchase({ mode: settings.salesMode, product: p, brewery: p.brewery, operatorLicenseConfirmed: settings.operatorLicenseConfirmed }),
     brewery: {
       slug: p.brewery.slug,
       name: p.brewery.name,

@@ -18,6 +18,8 @@ export interface SiteSettings {
   curationWeights: Record<string, number>;
   pgContractConfirmed: boolean;
   settlementStructureConfirmed: boolean;
+  operatorLicenseConfirmed: boolean;
+  giftWrapFee: number;
   business: {
     companyName: string;
     representative: string;
@@ -56,6 +58,8 @@ export const DEFAULT_SETTINGS: SiteSettings = {
   },
   pgContractConfirmed: false,
   settlementStructureConfirmed: false,
+  operatorLicenseConfirmed: false,
+  giftWrapFee: 5000,
   business: {
     companyName: "(운영사 등록 전)",
     representative: "-",

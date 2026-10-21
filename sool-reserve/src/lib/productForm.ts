@@ -124,6 +124,9 @@ export function parseProductForm(fd: FormData, scopes: ProductScopes): Prisma.Pr
     }
   }
 
+  if (scopes.economics && fd.get("tradeModel") === "WHOLESALE" && !str(fd, "supplierId")) {
+    throw new FormError("매입형 상품은 공급처(도매상)를 지정해 주세요.");
+  }
   if (scopes.economics) {
     Object.assign(data, {
       tradeModel: oneOf(fd, "tradeModel", ["COMMISSION", "WHOLESALE"] as const, "COMMISSION"),
@@ -135,6 +138,7 @@ export function parseProductForm(fd: FormData, scopes: ProductScopes): Prisma.Pr
       platformPromoCost: int(fd, "platformPromoCost", { min: 0, label: "플랫폼 부담 프로모션" }) ?? 0,
       otherVariableCost: int(fd, "otherVariableCost", { min: 0, label: "기타 변동비" }) ?? 0,
       wholesaleCost: int(fd, "wholesaleCost", { min: 0, label: "매입가" }),
+      supplierId: str(fd, "supplierId", 40),
       expectedMonthlyUnits: int(fd, "expectedMonthlyUnits", { min: 0, label: "예상 월 판매량" }) ?? 0,
     });
   }

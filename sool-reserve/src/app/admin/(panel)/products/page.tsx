@@ -68,9 +68,9 @@ export default async function ProductsAdmin({ searchParams }: { searchParams: SP
               <th>주종</th>
               <th>적격</th>
               <th>맛</th>
-              <th className="text-right">수수료율</th>
+              <th className="text-right">모델 · 수수료율</th>
               <th className="text-right">개당 공헌이익</th>
-              <th className="text-right">이익률(수수료 대비)</th>
+              <th className="text-right">공헌이익률</th>
               <th>판매가 · 재고 · 상태 (즉시 수정)</th>
             </tr>
           </thead>
@@ -90,7 +90,7 @@ export default async function ProductsAdmin({ searchParams }: { searchParams: SP
                   <Pill tone={r.eligibility === "VERIFIED" ? "good" : r.eligibility === "INELIGIBLE" ? "bad" : "warn"}>{ELIGIBILITY_LABEL[r.eligibility]}</Pill>
                 </td>
                 <td>{r.tasteSource === "NONE" ? <Pill tone="warn">미등록</Pill> : <Pill>{r.tasteSource === "MANUFACTURER" ? "제조사" : "자체"}</Pill>}</td>
-                <td className="text-right tabular-nums">{r.econ.commissionRate}%</td>
+                <td className="text-right tabular-nums">{r.econ.model === "WHOLESALE" ? <Pill tone="brand">직매입</Pill> : `${r.econ.commissionRate}%`}</td>
                 <td className={`text-right tabular-nums ${r.econ.contribution < 0 ? "text-[#9B1C1C]" : ""}`}>{won(r.econ.contribution)}</td>
                 <td className="text-right tabular-nums">{pct(r.econ.marginOnCommission)}</td>
                 <td>

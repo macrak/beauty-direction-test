@@ -1,17 +1,19 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { commerceRouteAllowed } from "@/lib/commerce";
-import { isStaffSession } from "@/lib/auth";
-import { getSettings } from "@/lib/settings";
+import CartView from "@/components/CartView";
+import { commerceSession } from "@/lib/orders";
 
-// 판매 기능 게이트: SHOWCASE 모드에서는 관리자에게도 404
+export const metadata: Metadata = { title: "장바구니", robots: { index: false } };
+
+// 판매 기능 게이트: SHOWCASE 모드에서는 관리자에게도 404, PRIVATE_TEST는 관리자만
 export default async function CartPage() {
-  const s = await getSettings();
-  if (!commerceRouteAllowed(s.salesMode, await isStaffSession())) notFound();
+  const s = await commerceSession();
+  if (!s.allowed) notFound();
   return (
-    <div className="container-site py-24">
-      <p className="eyebrow">{s.salesMode === "PRIVATE_TEST" ? "Private Test" : "Cart"}</p>
-      <h1 className="h-display mt-4">장바구니</h1>
-      <p className="mt-6 text-sm text-charcoal/60">3단계(판매 준비)에서 구현 예정입니다. 판매자별 주문 분할 · Mock 결제로 비공개 테스트합니다.</p>
+    <div className="container-site pb-10 pt-12 md:pt-20">
+      <p className="eyebrow">Cart</p>
+      <h1 className="h-display mt-4 mb-12">장바구니</h1>
+      <CartView testMode={s.settings.salesMode !== "LIVE"} />
     </div>
   );
 }

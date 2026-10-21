@@ -315,8 +315,9 @@ export async function saveSystemSettings(_s: ActionState, fd: FormData): Promise
     const salesMode = oneOf(fd, "salesMode", ["SHOWCASE", "PRIVATE_TEST", "LIVE"] as const, before.salesMode) as SalesMode;
     const pgContractConfirmed = bool(fd, "pgContractConfirmed");
     const settlementStructureConfirmed = bool(fd, "settlementStructureConfirmed");
+    const operatorLicenseConfirmed = bool(fd, "operatorLicenseConfirmed");
     if (salesMode === "LIVE" && before.salesMode !== "LIVE") {
-      const r = await computeLiveReadiness({ pgContractConfirmed, settlementStructureConfirmed });
+      const r = await computeLiveReadiness({ pgContractConfirmed, settlementStructureConfirmed, operatorLicenseConfirmed });
       if (!r.ready) throw new FormError("LIVE 전환 조건이 충족되지 않았습니다: " + r.items.filter((x) => !x.ok).map((x) => x.label).join(", "));
     }
     const tiers = (str(fd, "priceTiers") ?? "")
@@ -343,6 +344,8 @@ export async function saveSystemSettings(_s: ActionState, fd: FormData): Promise
       curationWeights: weights,
       pgContractConfirmed,
       settlementStructureConfirmed,
+      operatorLicenseConfirmed,
+      giftWrapFee: int(fd, "giftWrapFee", { min: 0, max: 1_000_000, label: "선물 포장비" }) ?? 0,
       business: {
         companyName: str(fd, "b_companyName", 80) ?? "",
         representative: str(fd, "b_representative", 40) ?? "",
@@ -362,13 +365,22 @@ export async function saveSystemSettings(_s: ActionState, fd: FormData): Promise
   return { ok: true, message: "설정이 저장되었습니다." };
 }
 
-export async function computeLiveReadiness(confirm?: { pgContractConfirmed: boolean; settlementStructureConfirmed: boolean }) {
-  const s = await getSettings();
+export async function computeLiveReadiness(confirm?: { pgContractConfirmed: boolean; settlementStructureConfirmed: boolean; operatorLicenseConfirmed?: boolean }) {
+  const s0 = await getSettings();
+  const s = { ...s0, ...(confirm?.operatorLicenseConfirmed !== undefined ? { operatorLicenseConfirmed: confirm.operatorLicenseConfirmed } : {}) };
   const now = new Date();
-  const [verifiedSellerCount, verifiedProductCount, notices] = await Promise.all([
+  const [verifiedSellerCount, verifiedProductCount, notices, wholesaleProductCount] = await Promise.all([
     prisma.brewery.count({ where: { isDemo: false, salesEnabled: true, compliance: { status: "APPROVED" } } }),
-    prisma.product.count({ where: { isDemo: false, status: "PUBLISHED", eligibility: "VERIFIED", tradeModel: "COMMISSION", brewery: { salesEnabled: true } } }),
+    prisma.product.count({
+      where: {
+        isDemo: false,
+        status: "PUBLISHED",
+        eligibility: "VERIFIED",
+        OR: [{ tradeModel: "COMMISSION", brewery: { salesEnabled: true } }, ...(s.operatorLicenseConfirmed ? [{ tradeModel: "WHOLESALE" as const, wholesaleCost: { not: null } }] : [])],
+      },
+    }),
     Promise.all(REQUIRED_NOTICES.map((t) => prisma.legalNotice.count({ where: { type: t, effectiveFrom: { lte: now } } }))),
+    prisma.product.count({ where: { isDemo: false, status: "PUBLISHED", tradeModel: "WHOLESALE" } }),
   ]);
   return liveReadiness({
     verifiedSellerCount,
@@ -378,6 +390,8 @@ export async function computeLiveReadiness(confirm?: { pgContractConfirmed: bool
     pgContractConfirmed: confirm?.pgContractConfirmed ?? s.pgContractConfirmed,
     settlementStructureConfirmed: confirm?.settlementStructureConfirmed ?? s.settlementStructureConfirmed,
     requiredNoticesPublished: notices.every((n) => n > 0),
+    wholesaleProductCount,
+    operatorLicenseConfirmed: s.operatorLicenseConfirmed,
   });
 }
 

@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import { calcEconomics, resolveCommissionRate } from "@/lib/economics";
+import { calcEconomics, calcWholesale, resolveCommissionRate } from "@/lib/economics";
 import { pct, won } from "@/lib/format";
 
 // 폼 입력값으로 수익 계산을 실시간 미리보기 (서버와 동일한 calcEconomics 사용)
@@ -47,7 +47,26 @@ export default function LiveEconomics({
     platformPromoCost: n("platformPromoCost"),
     otherVariableCost: n("otherVariableCost"),
   });
-  const rows: [string, string, boolean?][] = [
+  const wholesale = vals.tradeModel === "WHOLESALE";
+  const w = calcWholesale({
+    price: n("price"),
+    wholesaleCost: vals.wholesaleCost ? Number(vals.wholesaleCost) : null,
+    pgRate: n("pgRate"),
+    platformShippingCost: n("platformShippingCost"),
+    platformPromoCost: n("platformPromoCost"),
+    otherVariableCost: n("otherVariableCost"),
+  });
+  const wholesaleRows: [string, string, boolean?][] = [
+    ["순매출 (VAT 제외)", won(w.netSales)],
+    ["매입 원가 (VAT 제외)", w.missingCost ? "매입가 미입력" : won(w.netCost)],
+    ["매출총이익", won(w.grossMargin)],
+    ["결제 수수료", won(w.pgCost)],
+    ["예상 공헌이익", won(w.contribution), true],
+    ["순매출 대비 이익률", pct(w.marginOnSales)],
+    ["원가 대비 마크업", pct(w.markup)],
+    ["예상 월 공헌이익", won(w.contribution * n("expectedMonthlyUnits"))],
+  ];
+  const rows: [string, string, boolean?][] = wholesale ? wholesaleRows : [
     ["적용 수수료율", `${rate}%${productRate === null ? " (기본값)" : ""}`],
     ["수수료 기준금액", won(r.basisAmount)],
     ["플랫폼 수수료 수익", won(r.commission)],
@@ -60,12 +79,12 @@ export default function LiveEconomics({
   ];
   return (
     <div ref={ref} className="rounded border border-burgundy/20 bg-burgundy/[0.03] p-4 md:col-span-4">
-      <p className="text-xs font-semibold text-burgundy">수익 계산 미리보기 (1병 기준)</p>
+      <p className="text-xs font-semibold text-burgundy">수익 계산 미리보기 (1병 기준 · {wholesale ? "매입형" : "중개형"})</p>
       <dl className="mt-3 grid grid-cols-2 gap-x-6 gap-y-2 text-sm md:grid-cols-3">
         {rows.map(([k, v, strong]) => (
           <div key={k} className="flex justify-between gap-3 border-b border-line/70 py-1">
             <dt className="text-charcoal/55">{k}</dt>
-            <dd className={`tabular-nums ${strong ? `font-semibold ${r.contribution < 0 ? "text-[#9B1C1C]" : ""}` : ""}`}>{v}</dd>
+            <dd className={`tabular-nums ${strong ? `font-semibold ${(wholesale ? w.contribution : r.contribution) < 0 ? "text-[#9B1C1C]" : ""}` : ""}`}>{v}</dd>
           </div>
         ))}
       </dl>

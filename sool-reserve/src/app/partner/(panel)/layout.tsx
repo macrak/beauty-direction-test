@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 const NAV = [
   { href: "/partner", label: "상품 · 재고" },
   { href: "/partner/products/new", label: "상품 등록" },
-  { href: "/partner/orders", label: "주문 · 정산 · 판매 현황" },
+  { href: "/partner/orders", label: "주문 · 출고 · 정산" },
   { href: "/partner/profile", label: "양조장 정보" },
 ];
 

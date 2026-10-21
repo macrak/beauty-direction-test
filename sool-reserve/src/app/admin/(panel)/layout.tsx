@@ -13,10 +13,14 @@ const NAV = [
   { href: "/admin/products", label: "상품 관리", group: "카탈로그" },
   { href: "/admin/selection", label: "상품 선별", group: "카탈로그" },
   { href: "/admin/featured", label: "추천 상품 설정", group: "카탈로그" },
+  { href: "/admin/orders", label: "주문 관리", group: "판매" },
+  { href: "/admin/settlements", label: "정산", group: "판매" },
+  { href: "/admin/suppliers", label: "공급처 (도매상)", group: "판매" },
+  { href: "/admin/purchase-orders", label: "발주 · 입고", group: "판매" },
   { href: "/admin/magazine", label: "매거진 · 콘텐츠", group: "운영" },
   { href: "/admin/inquiries", label: "문의 관리", group: "운영" },
   { href: "/admin/legal", label: "법적 고지 · 경고문구", group: "운영" },
-  { href: "/admin/commerce", label: "주문·배송·정산 (3단계)", group: "운영" },
+  { href: "/admin/commerce", label: "판매 준비 현황", group: "운영" },
   { href: "/admin/settings", label: "시스템 설정", group: "시스템" },
   { href: "/admin/users", label: "계정 · 권한", group: "시스템" },
   { href: "/admin/audit", label: "변경 이력", group: "시스템" },
@@ -25,7 +29,7 @@ const NAV = [
 export default async function PanelLayout({ children }: { children: React.ReactNode }) {
   const user = await requireStaff();
   const s = await getSettings();
-  const modeLabel = { SHOWCASE: "SHOWCASE · 소개 전용 (구매 기능 비공개)", PRIVATE_TEST: "PRIVATE TEST · 관리자 전용 테스트", LIVE: "LIVE · 판매 중" }[s.salesMode];
+  const modeLabel = { SHOWCASE: "SHOWCASE · 소개 전용 (구매 기능 비공개)", PRIVATE_TEST: "PRIVATE TEST · 관리자만 장바구니·Mock 결제 가능", LIVE: "LIVE · 판매 중" }[s.salesMode];
   return (
     <AdminShell
       title="ADMIN CONSOLE"

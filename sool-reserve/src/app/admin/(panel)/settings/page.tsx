@@ -37,6 +37,7 @@ export default async function SettingsPage() {
             <div className="mt-3 flex flex-wrap gap-5">
               <Check label="PG사 주류 가맹 심사 완료 확인" name="pgContractConfirmed" defaultChecked={s.pgContractConfirmed} />
               <Check label="판매자별 정산 구조 확인" name="settlementStructureConfirmed" defaultChecked={s.settlementStructureConfirmed} />
+              <Check label="운영사 주류 판매·통신판매 자격 확인 (직매입 판매에 필요)" name="operatorLicenseConfirmed" defaultChecked={s.operatorLicenseConfirmed} />
             </div>
           </div>
           <div className="flex flex-wrap gap-5 md:col-span-4">
@@ -69,6 +70,7 @@ export default async function SettingsPage() {
           <F label="입점 기준 최소 판매가(원)" name="minListingPrice" type="number" defaultValue={s.minListingPrice} hint="상품 선별 기본 조건" />
           <F label="가격 컬렉션 구간(원, 쉼표 구분)" name="priceTiers" defaultValue={s.priceTiers.join(", ")} span={2} hint="메인 PRICE COLLECTION·가격 필터에 사용" />
           <F label="시스템 기본 수수료율(%)" name="defaultCommissionRate" type="number" step="0.1" defaultValue={s.defaultCommissionRate} />
+          <F label="선물 포장비(원)" name="giftWrapFee" type="number" step="500" defaultValue={s.giftWrapFee} hint="주문 시 선물 포장 선택 금액" />
         </Section>
 
         <Section title="상품 평가 가중치" desc="종합 선별 점수 = Σ(점수×가중치) ÷ Σ가중치 (미평가 항목 제외). 0이면 해당 기준 미반영.">

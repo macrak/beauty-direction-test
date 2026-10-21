@@ -115,7 +115,7 @@ enum EligibilityStatus {
 
 enum TradeModel {
   COMMISSION    // 중개 (MVP 활성)
-  WHOLESALE     // 매입 (비활성 — 별도 면허 필요)
+  WHOLESALE     // 매입 (운영사가 판매자 — 판매 자격 확인 후 LIVE)
 }
 
 enum ProductStatus {
@@ -240,7 +240,9 @@ model Product {
   platformShippingCost Int            @default(0)
   platformPromoCost Int               @default(0)
   otherVariableCost Int               @default(0)
-  wholesaleCost     Int?              // 매입형 전용 (비활성)
+  wholesaleCost     Int?              // 매입형: 매입 단가 (VAT 포함)
+  supplierId        String?
+  supplier          Supplier?         @relation(fields: [supplierId], references: [id])
   expectedMonthlyUnits Int            @default(0)
 
   // 선별 평가 점수 (1~5, null = 미평가) — 근거 없는 자동 생성 금지
@@ -266,6 +268,7 @@ model Product {
 
   featured   FeaturedSlot[]
   orderItems OrderItem[]
+  purchaseItems PurchaseOrderItem[]
   articles   ArticleProduct[]
 
   @@index([status])
@@ -447,7 +450,64 @@ model AuditLog {
   @@index([entity, entityId])
 }
 
-// ─── 3단계: 주문 · 결제 · 정산 (모델만 정의, 기능 비활성) ───────────
+// ─── 매입형: 공급처 · 발주 ─────────────────────────────────
+
+model Supplier {
+  id              String          @id @default(cuid())
+  name            String
+  businessNumber  String?
+  licenseType     String?         // 예: 종합주류도매업, 특정주류도매업
+  licenseNumber   String?
+  licenseVerified Boolean         @default(false) // 면허 확인 완료
+  contactName     String?
+  phone           String?
+  email           String?
+  address         String?
+  paymentTerms    String?         // 결제 조건 (예: 월말 정산, 선입금)
+  leadTimeDays    Int?            // 발주 후 입고까지 일수
+  note            String?
+  active          Boolean         @default(true)
+  isDemo          Boolean         @default(false)
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  products        Product[]
+  purchaseOrders  PurchaseOrder[]
+}
+
+enum PurchaseOrderStatus {
+  DRAFT      // 작성 중
+  ORDERED    // 발주 완료
+  RECEIVED   // 입고 완료 (재고 반영)
+  CANCELLED
+}
+
+model PurchaseOrder {
+  id         String              @id @default(cuid())
+  number     String              @unique
+  supplierId String
+  supplier   Supplier            @relation(fields: [supplierId], references: [id])
+  status     PurchaseOrderStatus @default(DRAFT)
+  note       String?
+  totalCost  Int                 @default(0)
+  orderedAt  DateTime?
+  receivedAt DateTime?
+  createdBy  String?
+  createdAt  DateTime            @default(now())
+  items      PurchaseOrderItem[]
+}
+
+model PurchaseOrderItem {
+  id              String        @id @default(cuid())
+  purchaseOrderId String
+  purchaseOrder   PurchaseOrder @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
+  productId       String
+  product         Product       @relation(fields: [productId], references: [id])
+  quantity        Int
+  unitCost        Int           // VAT 포함 매입 단가
+}
+
+// ─── 주문 · 결제 · 배송 · 정산 ─────────────────────────────
+// PRIVATE_TEST 모드: 관리자만, Mock 결제·Mock 성인인증. LIVE는 실제 공급자 연동 후에만.
 
 enum OrderStatus {
   PENDING
@@ -459,63 +519,85 @@ enum OrderStatus {
   REFUNDED
 }
 
+enum SellerType {
+  BREWERY   // 중개: 양조장이 판매자
+  OPERATOR  // 매입: 운영사가 판매자
+}
+
 model Order {
   id                String        @id @default(cuid())
   orderNumber       String        @unique
   customerRef       String        // 고객 식별자 (최소 정보)
   ageVerificationId String?
+  status            OrderStatus   @default(PENDING)
+  subtotal          Int
+  shippingFee       Int           @default(0)
+  giftWrapFee       Int           @default(0)
   totalAmount       Int
+  recipientName     String
+  recipientPhone    String
+  postalCode        String?
+  address           String
+  addressDetail     String?
+  deliveryNote      String?
+  desiredDate       DateTime?
+  giftWrap          Boolean       @default(false)
+  giftMessage       String?
   isTest            Boolean       @default(true)
+  paidAt            DateTime?
+  cancelledAt       DateTime?
+  cancelReason      String?
   createdAt         DateTime      @default(now())
   sellerOrders      SellerOrder[]
   payments          Payment[]
 }
 
-// 주문은 판매자(양조장)별로 분할 — 판매·배송·정산 책임 구분
+// 주문은 판매자별로 분할 — 판매·배송·정산 책임 구분
 model SellerOrder {
-  id         String      @id @default(cuid())
-  orderId    String
-  order      Order       @relation(fields: [orderId], references: [id])
-  breweryId  String
-  brewery    Brewery     @relation(fields: [breweryId], references: [id])
-  status     OrderStatus @default(PENDING)
-  subtotal   Int
-  commission Int
-  items      OrderItem[]
-  shipments  Shipment[]
-}
-
-model OrderItem {
-  id            String      @id @default(cuid())
-  sellerOrderId String
-  sellerOrder   SellerOrder @relation(fields: [sellerOrderId], references: [id])
-  productId     String
-  product       Product     @relation(fields: [productId], references: [id])
-  quantity      Int
-  unitPrice     Int
-  giftWrap      Boolean     @default(false)
-}
-
-model Payment {
-  id          String   @id @default(cuid())
-  orderId     String
-  order       Order    @relation(fields: [orderId], references: [id])
-  provider    String   // "mock" 외 실제 PG는 LIVE에서만
-  amount      Int
-  status      String
-  externalRef String?
-  createdAt   DateTime @default(now())
-}
-
-model Shipment {
   id             String      @id @default(cuid())
-  sellerOrderId  String
-  sellerOrder    SellerOrder @relation(fields: [sellerOrderId], references: [id])
+  orderId        String
+  order          Order       @relation(fields: [orderId], references: [id])
+  sellerType     SellerType  @default(BREWERY)
+  breweryId      String?
+  brewery        Brewery?    @relation(fields: [breweryId], references: [id])
+  status         OrderStatus @default(PENDING)
+  subtotal       Int
+  shippingFee    Int         @default(0)
+  commission     Int         @default(0) // 중개 수수료
+  costTotal      Int         @default(0) // 매입 원가 합계
   carrier        String?
   trackingNumber String?
   shippedAt      DateTime?
   deliveredAt    DateTime?
   damageReported Boolean     @default(false)
+  damageNote     String?
+  items          OrderItem[]
+}
+
+model OrderItem {
+  id             String      @id @default(cuid())
+  sellerOrderId  String
+  sellerOrder    SellerOrder @relation(fields: [sellerOrderId], references: [id])
+  productId      String
+  product        Product     @relation(fields: [productId], references: [id])
+  productName    String      // 주문 시점 상품명
+  quantity       Int
+  unitPrice      Int
+  tradeModel     TradeModel  @default(COMMISSION)
+  commissionRate Float?
+  unitCost       Int?        // 매입형 원가
+}
+
+model Payment {
+  id          String    @id @default(cuid())
+  orderId     String
+  order       Order     @relation(fields: [orderId], references: [id])
+  provider    String    // "mock"은 PRIVATE_TEST 전용, 실제 PG는 LIVE에서만
+  amount      Int
+  status      String    // PAID | REFUNDED | FAILED
+  externalRef String?
+  refundedAt  DateTime?
+  createdAt   DateTime  @default(now())
 }
 
 model Settlement {

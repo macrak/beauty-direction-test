@@ -1183,12 +1183,45 @@ async function ensureArticles() {
   console.log(`데모 매거진 ${ARTICLES.length}편 생성`);
 }
 
+// 데모 공급처(도매상)와 직매입 상품 — 가상 업체
+async function ensureSuppliers() {
+  if (force) await prisma.supplier.deleteMany({ where: { isDemo: true, purchaseOrders: { none: {} } } });
+  if ((await prisma.supplier.count()) > 0) return;
+  const sup = await prisma.supplier.create({
+    data: {
+      name: "(데모) 한빛주류상사",
+      businessNumber: "000-00-00000",
+      licenseType: "종합주류도매업",
+      licenseNumber: "데모-면허",
+      licenseVerified: false,
+      contactName: "데모 담당자",
+      phone: "02-000-0000",
+      email: "order@hanbit.example",
+      address: "(데모) 서울특별시",
+      paymentTerms: "월말 마감 · 익월 10일 결제",
+      leadTimeDays: 3,
+      note: "화면 구성을 위한 가상 공급처입니다.",
+      isDemo: true,
+    },
+  });
+  const wholesale: [string, number][] = [
+    ["yeogang-25", 66000],
+    ["sanjeong-junmai", 78000],
+    ["sagwabat-brandy-40", 92000],
+  ];
+  for (const [slug, cost] of wholesale) {
+    await prisma.product.updateMany({ where: { slug, isDemo: true }, data: { tradeModel: "WHOLESALE", supplierId: sup.id, wholesaleCost: cost } });
+  }
+  console.log("데모 공급처 1곳, 직매입 상품 3개 설정");
+}
+
 async function main() {
   await ensureAdmin();
   await ensureNotices();
   await seedDemo();
   await ensureThemes();
   await ensureArticles();
+  await ensureSuppliers();
 }
 
 main()

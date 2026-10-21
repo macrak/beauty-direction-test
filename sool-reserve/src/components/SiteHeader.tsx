@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import CartLink from "./CartLink";
 
 const NAV = [
   { href: "/collection", label: "컬렉션" },
@@ -14,7 +15,7 @@ const NAV = [
   { href: "/story", label: "브랜드 스토리" },
 ];
 
-export default function SiteHeader({ brandName }: { brandName: string }) {
+export default function SiteHeader({ brandName, cartEnabled = false }: { brandName: string; cartEnabled?: boolean }) {
   const [scrolled, setScrolled] = useState(false);
   const menu = useRef<HTMLDetailsElement>(null);
   const pathname = usePathname();
@@ -46,6 +47,11 @@ export default function SiteHeader({ brandName }: { brandName: string }) {
             </Link>
           ))}
         </nav>
+        {cartEnabled && (
+          <div className="ml-auto mr-1 lg:ml-6 lg:mr-0">
+            <CartLink />
+          </div>
+        )}
         <details ref={menu} className="group lg:hidden [&_summary::-webkit-details-marker]:hidden">
           <summary className="flex h-10 w-10 cursor-pointer list-none flex-col items-center justify-center gap-1.5" aria-label="메뉴">
             <span className="h-px w-6 bg-charcoal transition group-open:translate-y-[3.5px] group-open:rotate-45" />

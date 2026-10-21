@@ -17,7 +17,7 @@ export default async function Dashboard({ searchParams }: { searchParams: { deni
   const [newInquiries, onboarding, orders] = await Promise.all([
     prisma.inquiry.count({ where: { status: "NEW" } }),
     prisma.brewery.count({ where: { onboardingStatus: { notIn: ["LISTED", "REJECTED"] } } }),
-    prisma.sellerOrder.groupBy({ by: ["status"], _count: true }),
+    prisma.order.findMany({ select: { status: true, totalAmount: true, isTest: true, sellerOrders: { select: { damageReported: true, subtotal: true } } } }),
   ]);
 
   const byBrewery = new Map<string, number>();
@@ -57,9 +57,9 @@ export default async function Dashboard({ searchParams }: { searchParams: { deni
       />
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <Kpi label="예상 월 거래액" value={won(gmv)} />
-        <Kpi label="예상 월 플랫폼 수수료 수익" value={won(commission)} />
+        <Kpi label="예상 월 플랫폼 수익" value={won(commission)} sub="중개 수수료 + 직매입 매출총이익" />
         <Kpi label="예상 월 플랫폼 공헌이익" value={won(contribution)} tone={contribution < 0 ? "bad" : undefined} />
-        <Kpi label="수수료 대비 공헌이익률" value={pct(commission ? (contribution / commission) * 100 : null)} sub={`거래액 대비 ${pct(gmv ? (contribution / gmv) * 100 : null)}`} />
+        <Kpi label="플랫폼 수익 대비 공헌이익률" value={pct(commission ? (contribution / commission) * 100 : null)} sub={`거래액 대비 ${pct(gmv ? (contribution / gmv) * 100 : null)}`} />
       </div>
 
       <div className="mt-4 grid gap-4 lg:grid-cols-3">
@@ -138,18 +138,27 @@ export default async function Dashboard({ searchParams }: { searchParams: { deni
           </ol>
         </div>
         <div className="adm-card">
-          <h2 className="text-sm font-semibold">취소 · 반품 · 파손 비용</h2>
+          <h2 className="text-sm font-semibold">주문 · 취소 · 파손 {orders.some((o) => o.isTest) && <span className="ml-1 text-xs font-normal text-charcoal/45">(테스트 주문 포함)</span>}</h2>
           {orders.length === 0 ? (
-            <p className="mt-3 text-sm text-charcoal/55">주문 데이터 없음 — 판매 기능(LIVE) 활성화 후 판매자별 주문 기준으로 집계됩니다.</p>
+            <p className="mt-3 text-sm text-charcoal/55">주문 데이터 없음 — PRIVATE_TEST 모드에서 테스트 주문을 넣거나 LIVE 전환 후 집계됩니다.</p>
           ) : (
-            <ul className="mt-3 text-sm">
-              {orders.map((o) => (
-                <li key={o.status}>
-                  {o.status}: {o._count}
-                </li>
+            <dl className="mt-3 grid grid-cols-2 gap-3 text-sm">
+              {[
+                ["결제 완료 주문", `${orders.filter((o) => !["CANCELLED", "REFUNDED", "PENDING"].includes(o.status)).length}건`],
+                ["결제 금액", won(orders.filter((o) => !["CANCELLED", "REFUNDED", "PENDING"].includes(o.status)).reduce((a, o) => a + o.totalAmount, 0))],
+                ["취소·환불", `${orders.filter((o) => ["CANCELLED", "REFUNDED"].includes(o.status)).length}건 · ${won(orders.filter((o) => ["CANCELLED", "REFUNDED"].includes(o.status)).reduce((a, o) => a + o.totalAmount, 0))}`],
+                ["파손 신고", `${orders.flatMap((o) => o.sellerOrders).filter((so) => so.damageReported).length}건 · ${won(orders.flatMap((o) => o.sellerOrders).filter((so) => so.damageReported).reduce((a, so) => a + so.subtotal, 0))}`],
+              ].map(([l, v]) => (
+                <div key={l}>
+                  <dt className="text-xs text-charcoal/50">{l}</dt>
+                  <dd className="mt-0.5 font-medium tabular-nums">{v}</dd>
+                </div>
               ))}
-            </ul>
+            </dl>
           )}
+          <Link href="/admin/orders" className="mt-3 inline-block text-xs underline">
+            주문 관리 →
+          </Link>
         </div>
       </div>
     </>

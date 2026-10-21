@@ -87,7 +87,7 @@ export default async function Selection({ searchParams: sp }: { searchParams: SP
                 <th></th>
                 <th>상품</th>
                 <th className="text-right">판매가</th>
-                <th className="text-right">수수료 수익</th>
+                <th className="text-right">플랫폼 수익</th>
                 <th className="text-right">개당 공헌이익</th>
                 <th className="text-right">선물 적합성</th>
                 <th className="text-right">종합 점수</th>
