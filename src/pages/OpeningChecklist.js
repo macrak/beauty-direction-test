@@ -10,48 +10,94 @@ const phases = [
     key: 'before',
     label: '개원 전',
     timing: 'D-60 ~ D-1',
-    groups: [
+    subStages: [
       {
-        title: '홈페이지',
-        items: [
-          '다국어 홈페이지 제작 완료',
-          '진료과목·주력시술 페이지 구성',
-          '시술후주의사항 페이지 제작',
-          '모바일 반응형 확인',
+        label: '기초 설계',
+        timing: 'D-60 ~ D-45',
+        groups: [
+          {
+            id: 'plan',
+            title: '사전 기획',
+            items: ['주력 시술·진료과목 확정', '홈페이지 제작 착수'],
+          },
         ],
       },
       {
-        title: '브랜드 채널',
-        items: [
-          '네이버 플레이스 등록 및 정보 최적화',
-          '카카오맵 병원 정보 등록',
-          '인스타그램·블로그 채널 개설',
-          '원장님 네이버 인물정보 등록',
+        label: '기반 구축',
+        timing: 'D-44 ~ D-30',
+        groups: [
+          {
+            id: 'homepage',
+            title: '홈페이지',
+            items: [
+              '다국어 홈페이지 제작 완료',
+              '진료과목·주력시술 페이지 구성',
+              '시술후주의사항 페이지 제작',
+              '모바일 반응형 확인',
+            ],
+          },
+          {
+            id: 'brand',
+            title: '브랜드 채널',
+            items: [
+              '네이버 플레이스 등록 및 정보 최적화',
+              '카카오맵 병원 정보 등록',
+              '인스타그램·블로그 채널 개설',
+              '원장님 네이버 인물정보 등록',
+            ],
+          },
+          {
+            id: 'app',
+            title: '어플·예약 세팅',
+            items: ['예약 어플 연동', '상담 챗봇·채널톡 세팅'],
+          },
+          {
+            id: 'platform',
+            title: '의료 플랫폼 입점',
+            items: ['리뷰·예약 플랫폼(강남언니, 바비톡 등) 가입', '플랫폼별 병원 정보 세팅'],
+          },
         ],
       },
       {
-        title: '어플·예약 세팅',
-        items: ['예약 어플 연동', '상담 챗봇·채널톡 세팅'],
+        label: '노출 준비',
+        timing: 'D-29 ~ D-14',
+        groups: [
+          {
+            id: 'seo',
+            title: '검색엔진 세팅',
+            items: ['구글 서치콘솔 등록', '네이버 서치어드바이저 등록'],
+          },
+          {
+            id: 'ads',
+            title: '광고채널 세팅',
+            items: ['네이버 검색광고 계정 세팅', '광고 소재·키워드 초안 준비'],
+          },
+          {
+            id: 'preopen',
+            title: '사전마케팅 (오픈채팅방)',
+            items: ['오픈채팅방 개설', '사전 이벤트·혜택 안내 콘텐츠 준비', '자동 안내 메시지 세팅'],
+          },
+        ],
       },
       {
-        title: '의료 플랫폼 입점',
-        items: ['리뷰·예약 플랫폼(강남언니, 바비톡 등) 가입', '플랫폼별 병원 정보 세팅'],
-      },
-      {
-        title: '검색엔진 세팅',
-        items: ['구글 서치콘솔 등록', '네이버 서치어드바이저 등록'],
-      },
-      {
-        title: '광고채널 세팅',
-        items: ['네이버 검색광고 계정 세팅', '광고 소재·키워드 초안 준비'],
-      },
-      {
-        title: '사전마케팅 (오픈채팅방)',
-        items: ['오픈채팅방 개설', '사전 이벤트·혜택 안내 콘텐츠 준비', '자동 안내 메시지 세팅'],
-      },
-      {
-        title: '체험단 프로그램',
-        items: ['체험단 모집 공고', '체험 인원 확정 및 일정 조율'],
+        label: '오픈 임박',
+        timing: 'D-13 ~ D-1',
+        groups: [
+          {
+            id: 'trial',
+            title: '체험단 프로그램',
+            items: ['체험단 모집 공고', '체험 인원 확정 및 일정 조율'],
+          },
+          {
+            id: 'eventprep',
+            title: '오픈이벤트 준비',
+            items: [
+              '오픈 이벤트 기획 (할인·혜택)',
+              '이벤트 홍보 콘텐츠 제작',
+              '전 채널 정보 최종 일치 점검',
+            ],
+          },
+        ],
       },
     ],
   },
@@ -61,8 +107,9 @@ const phases = [
     timing: 'D-Day',
     groups: [
       {
+        id: 'eventrun',
         title: '오픈이벤트',
-        items: ['오픈 이벤트 기획 (할인·혜택)', '이벤트 홍보 콘텐츠 제작', '당일 운영 동선 점검'],
+        items: ['당일 운영 동선 점검', '오픈이벤트 운영'],
       },
     ],
   },
@@ -72,22 +119,27 @@ const phases = [
     timing: 'D+1 ~',
     groups: [
       {
+        id: 'monthly',
         title: '월이벤트',
         items: ['매월 이벤트 주제 기획', '이벤트 안내 콘텐츠 배포'],
       },
       {
+        id: 'flagship',
         title: '주력상품마케팅',
-        items: ['주력 시술 선정', '집중 홍보 콘텐츠 제작'],
+        items: ['집중 홍보 콘텐츠 제작', '주력 시술 운영 성과 점검'],
       },
       {
+        id: 'community',
         title: '지역 커뮤니티 운영',
         items: ['지역 맘카페 등 파악', '자연스러운 소통·노출 활동'],
       },
       {
+        id: 'content',
         title: '콘텐츠 상위노출',
         items: ['핵심 키워드 선정', '블로그·카페 콘텐츠 상위노출 작업'],
       },
       {
+        id: 'pr',
         title: '홍보 콘텐츠 제작·배포',
         items: ['환자 경험 콘텐츠 제작', '보도자료 배포', '블로그 원고 제작'],
       },
@@ -95,8 +147,11 @@ const phases = [
   },
 ];
 
+const groupsOf = (phase) =>
+  phase.subStages ? phase.subStages.flatMap((s) => s.groups) : phase.groups;
+
 const allItemIds = phases.flatMap((phase) =>
-  phase.groups.flatMap((group, gi) => group.items.map((_, ii) => `${phase.key}-${gi}-${ii}`))
+  groupsOf(phase).flatMap((group) => group.items.map((_, ii) => `${group.id}-${ii}`))
 );
 
 const loadChecked = () => {
@@ -107,6 +162,38 @@ const loadChecked = () => {
     return {};
   }
 };
+
+function GroupCard({ group, phaseKey, checked, toggle }) {
+  return (
+    <div className="bg-white rounded-2xl border border-slate-200 p-5">
+      <h3 className="font-bold text-slate-900 mb-3">{group.title}</h3>
+      <ul className="space-y-2">
+        {group.items.map((item, ii) => {
+          const id = `${group.id}-${ii}`;
+          const isChecked = !!checked[id];
+          return (
+            <li key={id}>
+              <button
+                type="button"
+                onClick={() => toggle(id)}
+                className="w-full flex items-start gap-3 text-left py-1.5 group"
+              >
+                {isChecked ? (
+                  <CheckCircle2 className="text-teal-600 shrink-0 mt-0.5" size={20} />
+                ) : (
+                  <Circle className="text-slate-300 group-hover:text-slate-400 shrink-0 mt-0.5" size={20} />
+                )}
+                <span className={isChecked ? 'text-slate-400 line-through' : 'text-slate-700'}>
+                  {item}
+                </span>
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  );
+}
 
 export default function OpeningChecklist() {
   const [checked, setChecked] = useState(loadChecked);
@@ -162,8 +249,8 @@ export default function OpeningChecklist() {
             개원 마케팅, 빠뜨리는 것 없이 준비하세요
           </h1>
           <p className="mt-5 text-slate-300 max-w-xl leading-relaxed">
-            개원 전부터 개원 후 운영까지, 맥락컨설팅이 실제로 진행하는 마케팅 항목을
-            체크리스트로 정리했습니다. 하나씩 체크하며 준비 상태를 점검해 보세요.
+            개원 전부터 개원 후 운영까지, 맥락컨설팅이 실제로 진행하는 마케팅 항목을 실행
+            순서대로 정리했습니다. 하나씩 체크하며 준비 상태를 점검해 보세요.
           </p>
 
           <div className="mt-8 bg-white/5 border border-white/10 rounded-2xl p-5">
@@ -193,46 +280,43 @@ export default function OpeningChecklist() {
               </span>
             </div>
 
-            <div className="space-y-5">
-              {phase.groups.map((group, gi) => (
-                <div
-                  key={group.title}
-                  className="bg-white rounded-2xl border border-slate-200 p-5"
-                >
-                  <h3 className="font-bold text-slate-900 mb-3">{group.title}</h3>
-                  <ul className="space-y-2">
-                    {group.items.map((item, ii) => {
-                      const id = `${phase.key}-${gi}-${ii}`;
-                      const isChecked = !!checked[id];
-                      return (
-                        <li key={id}>
-                          <button
-                            type="button"
-                            onClick={() => toggle(id)}
-                            className="w-full flex items-start gap-3 text-left py-1.5 group"
-                          >
-                            {isChecked ? (
-                              <CheckCircle2 className="text-teal-600 shrink-0 mt-0.5" size={20} />
-                            ) : (
-                              <Circle className="text-slate-300 group-hover:text-slate-400 shrink-0 mt-0.5" size={20} />
-                            )}
-                            <span
-                              className={
-                                isChecked
-                                  ? 'text-slate-400 line-through'
-                                  : 'text-slate-700'
-                              }
-                            >
-                              {item}
-                            </span>
-                          </button>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                </div>
-              ))}
-            </div>
+            {phase.subStages ? (
+              <div className="space-y-8">
+                {phase.subStages.map((sub) => (
+                  <div key={sub.label} className="border-l-2 border-teal-100 pl-4">
+                    <div className="flex items-baseline gap-2 mb-4">
+                      <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wide">
+                        {sub.label}
+                      </h3>
+                      <span className="text-xs font-mono text-slate-400">{sub.timing}</span>
+                    </div>
+                    <div className="space-y-5">
+                      {sub.groups.map((group) => (
+                        <GroupCard
+                          key={group.id}
+                          group={group}
+                          phaseKey={phase.key}
+                          checked={checked}
+                          toggle={toggle}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="space-y-5">
+                {phase.groups.map((group) => (
+                  <GroupCard
+                    key={group.id}
+                    group={group}
+                    phaseKey={phase.key}
+                    checked={checked}
+                    toggle={toggle}
+                  />
+                ))}
+              </div>
+            )}
           </section>
         ))}
 

@@ -17,8 +17,27 @@ import {
   FileText,
   ArrowRight,
   CheckCircle2,
+  XCircle,
   Download,
 } from 'lucide-react';
+
+const comparison = [
+  {
+    label: '다루는 범위',
+    general: '입지 선정, 인테리어, 인허가, 의료장비, 자금 조달까지 모두',
+    us: '개원 마케팅 하나',
+  },
+  {
+    label: '마케팅의 비중',
+    general: '여러 업무 중 하나로 곁들여짐',
+    us: '유일한 전문 분야',
+  },
+  {
+    label: '진행 방식',
+    general: '다른 업무에 밀려 마케팅 착수가 늦어지기 쉬움',
+    us: '개원 전부터 끝까지, 마케팅에만 집중된 실행',
+  },
+];
 
 const phases = [
   {
@@ -30,42 +49,50 @@ const phases = [
       {
         icon: Globe,
         title: '홈페이지 제작·유지보수',
-        desc: '다국어 홈페이지를 제작하고, 개원 이후에도 콘텐츠와 기능을 지속적으로 관리합니다.',
+        desc: '주력 시술·진료과목을 먼저 확정한 뒤 다국어 홈페이지를 제작하고, 개원 이후에도 콘텐츠와 기능을 지속적으로 관리합니다.',
+        start: 'D-60부터',
       },
       {
         icon: Share2,
         title: '브랜드 채널 세팅',
-        desc: '네이버 플레이스, 카카오맵, 블로그·SNS 등 병원의 첫인상이 되는 채널을 개설·최적화합니다.',
+        desc: '완성된 홈페이지를 기준으로 네이버 플레이스, 카카오맵, 블로그·SNS 등 병원의 첫인상이 되는 채널을 개설·최적화합니다.',
+        start: 'D-44부터',
       },
       {
         icon: Smartphone,
         title: '어플 세팅',
         desc: '예약, 상담, 리뷰 관리에 필요한 어플리케이션 환경을 구축합니다.',
+        start: 'D-44부터',
       },
       {
         icon: ClipboardList,
         title: '의료 플랫폼 입점',
-        desc: '환자들이 많이 쓰는 리뷰·예약 플랫폼에 가입하고 병원 정보를 세팅합니다.',
+        desc: '심사·승인 기간을 고려해 미리, 환자들이 많이 쓰는 리뷰·예약 플랫폼에 가입하고 병원 정보를 세팅합니다.',
+        start: 'D-44부터',
       },
       {
         icon: Search,
         title: '검색엔진 세팅',
-        desc: '검색엔진이 홈페이지를 제대로 읽도록 기본 환경을 연동합니다.',
+        desc: '홈페이지 콘텐츠가 어느 정도 쌓인 뒤, 검색엔진이 홈페이지를 제대로 읽도록 기본 환경을 연동합니다.',
+        start: 'D-29부터',
       },
       {
         icon: Megaphone,
         title: '광고채널 세팅',
-        desc: '네이버 등 병원 상황에 맞는 주요 검색광고 채널을 세팅합니다.',
+        desc: '네이버 등 병원 상황에 맞는 주요 검색광고 채널을 세팅합니다. 실제 집행은 개원 시점에 맞춰 조율합니다.',
+        start: 'D-29부터',
       },
       {
         icon: MessageSquare,
         title: '개원 전 사전마케팅',
         desc: '오픈채팅방을 활용해 개원 전부터 잠재 환자와의 접점을 만들고 커뮤니티를 형성합니다.',
+        start: 'D-29부터',
       },
       {
         icon: Users,
         title: '체험단 프로그램 운영',
-        desc: '신규 환자에게 체험 기회를 제공하고, 자연스러운 이용 경험을 쌓아갑니다.',
+        desc: '오픈 시점에 맞춰 후기가 쌓이도록, 개원 임박 시점에 신규 환자 체험 기회를 제공합니다.',
+        start: 'D-13부터',
       },
     ],
   },
@@ -179,6 +206,53 @@ export default function OpeningMarketing() {
         </div>
       </section>
 
+      <section className="bg-slate-50 px-6 py-16">
+        <div className="max-w-5xl mx-auto">
+          <p className="text-sm font-semibold tracking-wide text-teal-600 mb-3">왜 맥락인가</p>
+          <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 mb-3">
+            개원컨설팅엔 마케팅이 '일부'지만, 저희에겐 마케팅이 '전부'입니다
+          </h2>
+          <p className="text-slate-500 max-w-2xl mb-8 leading-relaxed">
+            일반적인 개원컨설팅은 입지·인테리어·인허가·장비·자금까지 함께 다루면서 마케팅은
+            여러 업무 중 하나로 곁들여집니다. 맥락컨설팅은 개원 마케팅 하나만 전문으로 하는
+            집단입니다. 성과는 결국 마케팅에만 집중하는 전문가와 일할 때 납니다.
+          </p>
+
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[560px] text-sm border border-slate-200 rounded-2xl overflow-hidden">
+              <thead>
+                <tr className="bg-slate-900 text-white">
+                  <th className="text-left font-semibold px-5 py-3 w-32">구분</th>
+                  <th className="text-left font-semibold px-5 py-3">일반 개원컨설팅</th>
+                  <th className="text-left font-semibold px-5 py-3">맥락컨설팅</th>
+                </tr>
+              </thead>
+              <tbody>
+                {comparison.map((row, i) => (
+                  <tr key={row.label} className={i % 2 === 0 ? 'bg-white' : 'bg-slate-50'}>
+                    <td className="px-5 py-4 border-t border-slate-200 font-semibold text-slate-800">
+                      {row.label}
+                    </td>
+                    <td className="px-5 py-4 border-t border-slate-200 text-slate-500">
+                      <span className="inline-flex items-start gap-2">
+                        <XCircle className="text-slate-300 shrink-0 mt-0.5" size={16} />
+                        {row.general}
+                      </span>
+                    </td>
+                    <td className="px-5 py-4 border-t border-slate-200 text-slate-800 font-medium">
+                      <span className="inline-flex items-start gap-2">
+                        <CheckCircle2 className="text-teal-600 shrink-0 mt-0.5" size={16} />
+                        {row.us}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
       {phases.map((phase, pi) => (
         <section key={phase.key} className={pi % 2 === 0 ? 'bg-white' : 'bg-slate-50'}>
           <div className="max-w-5xl mx-auto px-6 py-16">
@@ -197,7 +271,7 @@ export default function OpeningMarketing() {
                   : 'grid sm:grid-cols-2 gap-5'
               }
             >
-              {phase.services.map(({ icon: Icon, title, desc }) => (
+              {phase.services.map(({ icon: Icon, title, desc, start }) => (
                 <div
                   key={title}
                   className="bg-white rounded-2xl border border-slate-200 p-6 flex gap-4"
@@ -206,7 +280,14 @@ export default function OpeningMarketing() {
                     <Icon className="text-teal-600" size={22} />
                   </div>
                   <div>
-                    <h3 className="font-bold text-slate-900 mb-1">{title}</h3>
+                    <div className="flex items-center gap-2 mb-1">
+                      <h3 className="font-bold text-slate-900">{title}</h3>
+                      {start && (
+                        <span className="text-[11px] font-mono text-teal-700 bg-teal-50 px-1.5 py-0.5 rounded">
+                          {start}
+                        </span>
+                      )}
+                    </div>
                     <p className="text-sm text-slate-600 leading-relaxed">{desc}</p>
                   </div>
                 </div>
