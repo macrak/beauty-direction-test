@@ -7,6 +7,7 @@ import CelebrityDetail from './pages/CelebrityDetail';
 import BeautyDirection from './pages/BeautyDirection';
 import AiExposureLanding from './pages/AiExposureLanding';
 import OpeningChecklist from './pages/OpeningChecklist';
+import OpeningMarketing from './pages/OpeningMarketing';
 import './index.css';
 
 export default function App() {
@@ -17,6 +18,7 @@ export default function App() {
       <Route path="/direction/:id" element={<BeautyDirection />} />
       <Route path="/ai-exposure" element={<AiExposureLanding />} />
       <Route path="/opening-checklist" element={<OpeningChecklist />} />
+      <Route path="/opening-marketing" element={<OpeningMarketing />} />
     </Routes>
   );
 }
